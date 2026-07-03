@@ -12,7 +12,6 @@
 ---
 
 ## 📸 Application Dashboard
-*(Drag and drop your screenshot here when editing on GitHub)*
 ![Streamlit App Screenshot](assets/demo.png)
 
 ---
