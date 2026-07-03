@@ -454,6 +454,15 @@ if assess_clicked:
             fig_waterfall.patch.set_facecolor('#0E1117')
             ax.set_facecolor('#0E1117')
             shap.plots.waterfall(shap_values[0], max_display=12, show=False)
+            
+            # Fix text and axis colors for dark mode
+            plt.setp(ax.get_xticklabels(), color='#e2e8f0')
+            plt.setp(ax.get_yticklabels(), color='#e2e8f0')
+            ax.xaxis.label.set_color('#e2e8f0')
+            ax.tick_params(axis='both', colors='#e2e8f0')
+            for spine in ax.spines.values():
+                spine.set_edgecolor('#475569')
+
             plt.tight_layout()
             st.pyplot(fig_waterfall)
             plt.close()
