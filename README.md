@@ -13,7 +13,7 @@
 
 ## 📸 Application Dashboard
 *(Drag and drop your screenshot here when editing on GitHub)*
-![Streamlit App Screenshot](https://github.com/user-attachments/assets/placeholder-image-link)
+![Streamlit App Screenshot](assets/demo.png)
 
 ---
 
