@@ -1,0 +1,44 @@
+# Data — raw and processed (too large for GitHub)
+data/raw/
+*.csv
+*.xlsx
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual Environment
+venv/
+env/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports (keep figures tracked, ignore large temp files)
+reports/*.html
+
+# Misc
+*.log
+*.tmp
+
+# Gemini
+.agents/
