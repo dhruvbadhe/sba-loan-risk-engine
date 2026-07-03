@@ -1,77 +1,77 @@
-# SBA Loan Charge-Off Prediction & Expected Loss Engine
+# 🏦 SBA Loan Credit Risk Assessment Engine
 
-## Business Problem
-Community banks that originate SBA-backed loans need to assess charge-off risk at approval time. Even with the SBA guarantee covering 75-85%, the bank still loses the unguaranteed portion — averaging ~$47K per charge-off. This model predicts default probability and calculates expected dollar loss per loan using the Basel II/III Expected Loss framework.
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://sba-loan-risk-engine-aszwcpfzqmdffrrr4uhvvr.streamlit.app/)
+[![Python 3.10](https://img.shields.io/badge/Python-3.10-blue.svg)](https://www.python.org/)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6.1-orange.svg)](https://scikit-learn.org/)
+[![SHAP](https://img.shields.io/badge/SHAP-Explainable%20AI-green.svg)](https://shap.readthedocs.io/)
 
-## Expected Loss Framework
+> **A production-grade machine learning application that predicts default probability (PD) and calculates Expected Loss for SBA 7(a) business loans.**
 
-$$EL = PD \times LGD \times EAD$$
+### 🔗 **[Try the Live Web App Here](https://sba-loan-risk-engine-aszwcpfzqmdffrrr4uhvvr.streamlit.app/)**
 
-- **PD (Probability of Default)** — XGBoost classifier's predicted probability
-- **LGD (Loss Given Default)** — `(GrAppv - SBA_Appv) / GrAppv` (unguaranteed portion)
-- **EAD (Exposure at Default)** — `GrAppv` (total loan amount)
+---
 
-## Dataset
-[SBA 7(a) & 504 FOIA Data](https://data.sba.gov/en/dataset/7-a-504-foia) — Real U.S. government loan data from the SBA's Freedom of Information Act (FOIA) releases, covering FY1991–Present.
+## 📸 Application Dashboard
+*(Drag and drop your screenshot here when editing on GitHub)*
+![Streamlit App Screenshot](https://github.com/user-attachments/assets/placeholder-image-link)
 
-## Key Results
-- **Model:** XGBoost — PR-AUC = TBD, ROC-AUC = TBD
-- **Business Impact:** TBD
-- **Key Insight:** Moral hazard analysis of SBA guarantee ratios
+---
 
-## Project Structure
-```
-├── notebooks/
-│   ├── 01_data_cleaning.ipynb
-│   ├── 02_eda.ipynb
-│   ├── 03_feature_engineering.ipynb
-│   ├── 04_modeling.ipynb
-│   └── 05_shap_and_expected_loss.ipynb
-├── src/
-│   ├── clean.py              # Data cleaning functions
-│   ├── features.py            # Feature engineering (leak-safe)
-│   ├── pipeline.py            # sklearn Pipeline definition
-│   ├── evaluate.py            # Custom metrics (PR-AUC, precision@k, EL accuracy)
-│   ├── expected_loss.py       # PD × LGD × EAD calculation
-│   └── risk_tiers.py          # PD → risk tier mapping
-├── app/
-│   └── streamlit_app.py       # Full risk assessment UI
-├── models/                    # Saved model artifacts (.pkl)
-├── reports/figures/           # Saved EDA + SHAP plots
-├── data/                      # Raw & processed data (git-ignored)
-├── requirements.txt
-└── .gitignore
-```
+## 🚀 Project Overview
 
-## Technical Highlights
-- Temporal train/test split (no random split data leakage)
-- Leak-safe bank-level and industry-level feature engineering
-- SHAP-based explainable risk tiers for loan officer decision support
-- Moral hazard analysis of SBA guarantee ratios
-- Streamlit app with what-if scenarios and portfolio batch upload
+The Small Business Administration (SBA) 7(a) loan program guarantees billions of dollars in small business loans annually. This project analyzes **1.9 million historical FOIA loan records** to build a robust credit risk model capable of predicting loan charge-offs before they happen.
 
-## Setup
-```bash
-# Clone the repo
-git clone <repo-url>
-cd sba-loan-risk-engine
+Rather than just outputting a raw probability, the engine translates model predictions into **actionable financial metrics** using the Basel II/III framework and provides **real-time explainability** for every decision.
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
+### ✨ Key Features
+- **Expected Loss Engine:** Calculates dollar-risk per loan using the formula `EL = PD × LGD × EAD`.
+- **Explainable AI (XAI):** Uses SHAP (SHapley Additive exPlanations) waterfall plots to explain *why* a specific loan was flagged as risky (e.g., "Term is too long", "Bank has a poor track record").
+- **Actionable Risk Tiers:** Categorizes applicants into 4 distinct tiers (Auto Approve 🟢 to Recommend Denial 🔴) which are perfectly monotonically ordered by actual default rates.
+- **What-If Scenario Analysis:** Allows loan officers to dynamically adjust the SBA guarantee percentage and instantly see the impact on the bank's exposure.
 
-# Install dependencies
-pip install -r requirements.txt
+---
 
-# Download data
-# Place the 7(a) FOIA CSV files into data/raw/
-# Download from: https://data.sba.gov/en/dataset/7-a-504-foia
+## 🛠️ Tech Stack
 
-# Run notebooks in order (01 → 05)
+**Data Processing & Engineering**
+- `pandas` & `numpy`: Heavy data wrangling, handling systematic missingness, temporal filtering (post-2010), and engineering leak-safe historical default rates.
+- `pyarrow`: High-performance Parquet file storage.
 
-# Launch Streamlit app
-streamlit run app/streamlit_app.py
-```
+**Machine Learning & Explainability**
+- `scikit-learn`: Built a full ML pipeline. Explored Logistic Regression and Random Forests before deploying a highly-tuned **HistGradientBoosting Classifier**.
+- `SHAP`: Integrated TreeExplainer for local feature importance (waterfall plots) and global model interpretability (beeswarm plots).
 
-## License
-MIT
+**Deployment & MLOps**
+- `Streamlit`: Built a premium, interactive dark-themed web UI.
+- `joblib`: Model serialization and caching.
+- `Streamlit Community Cloud`: Live cloud hosting and CI/CD directly from GitHub.
+
+---
+
+## 🔬 Key Research Findings
+
+1. **Moral Hazard in Banking:** The data shows clear empirical evidence of moral hazard. Loans with an 85% SBA guarantee default at **13.1%**, while loans with a 75% guarantee default at only **7.8%**. Higher government backing correlates with significantly laxer underwriting by banks.
+2. **Macroeconomic Sensitivity:** The portfolio is highly sensitive to Federal Reserve policy. Following the aggressive rate hikes, the default rate of the SBA portfolio spiked from ~8% to **24% in 2023**, devastating variable-rate borrowers.
+3. **Inexperienced Lenders Underperform:** Banks with fewer than 10 historical SBA loans originate significantly riskier loans than high-volume, experienced SBA lenders.
+
+---
+
+## 💻 Run it Locally
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/dhruvbadhe/sba-loan-risk-engine.git
+   cd sba-loan-risk-engine
+   ```
+
+2. Create a virtual environment and install dependencies:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+3. Launch the Streamlit app:
+   ```bash
+   streamlit run app/streamlit_app.py
+   ```
