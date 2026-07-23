@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: sba-loan-risk-api
+    env: docker
+    plan: free
+    envVars:
+      - key: ENV
+        value: production
+      - key: DEBUG
+        value: false
+      - key: API_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: cache-redis
+          property: connectionString
+      - key: SUPABASE_URL
+        value: https://naaoarltrxjaikbqmjyd.supabase.co
+      - key: SUPABASE_KEY
+        value: sb_publishable_R8QiIXZ86UpKi2GVuFc7Sg_TBQRYGbq
+
+  - type: redis
+    name: cache-redis
+    plan: free
+    ipAllowList: []
