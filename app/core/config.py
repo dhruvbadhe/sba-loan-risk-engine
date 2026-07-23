@@ -15,7 +15,12 @@ class Settings(BaseSettings):
     MODEL_PATH: str = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), "models", "best_hgb_pipeline.pkl"
     )
+    # Cache Configurations
     REDIS_URL: str = Field(default="redis://localhost:6379/0")
+    
+    # Supabase Database Configurations
+    SUPABASE_URL: str = Field(default="")
+    SUPABASE_KEY: str = Field(default="")
     
     
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

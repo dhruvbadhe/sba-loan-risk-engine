@@ -4,12 +4,24 @@ import numpy as np
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from app.core.config import settings
+import logging
+from supabase import create_client, Client
 from app.core.dependencies import verify_api_access
 
+logger = logging.getLogger("app")
 
 router = APIRouter(tags=["Predictions"])
 
+# Load the trained machine learning pipeline once when the API starts up
 MODEL = joblib.load(settings.MODEL_PATH)
+
+# Initialize Supabase client if keys are provided in .env
+supabase_client: Client = None
+if settings.SUPABASE_URL and settings.SUPABASE_KEY:
+    try:
+        supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+    except Exception as e:
+        logger.error(f"Failed to initialize Supabase client: {e}")
 
 class LoanApplication(BaseModel):
     grossapproval: float = Field(..., description="Gross approved loan amount", examples=[250000.0])
@@ -49,8 +61,8 @@ def assign_risk_tier(pd_score: float):
     else:
         return "Tier 4", "🔴 Recommend Denial"
     
-@router.post("/predict", response_model=RiskAssessmentResponse, dependencies=[Depends(verify_api_access)])
-async def predict_risk(application: LoanApplication):
+@router.post("/predict", response_model=RiskAssessmentResponse)
+async def predict_risk(application: LoanApplication, auth_info: dict = Depends(verify_api_access)):
     data_dict = application.model_dump()
 
     data_dict['unguaranteed_exposure'] = data_dict['grossapproval'] - data_dict['sbaguaranteedapproval']
@@ -61,11 +73,26 @@ async def predict_risk(application: LoanApplication):
     pd_score = float(MODEL.predict_proba(input_df)[:,1][0])
 
     lgd = data_dict['unguaranteed_exposure'] / data_dict['grossapproval']
-
     ead = data_dict['grossapproval']
-
     expected_loss = pd_score * lgd * ead
     tier_label, action = assign_risk_tier(pd_score)
+
+    # Log to Supabase audit database if configured
+    if supabase_client:
+        try:
+            username = auth_info.get("user", "API_KEY_USER")
+            supabase_client.table("predictions").insert({
+                "username": username,
+                "loan_amount": float(ead),
+                "term_months": int(data_dict['terminmonths']),
+                "interest_rate": float(data_dict['initialinterestrate']),
+                "probability_of_default": float(pd_score),
+                "expected_loss": float(expected_loss),
+                "risk_tier": tier_label
+            }).execute()
+            logger.info(f"Successfully logged prediction to Supabase for user: {username}")
+        except Exception as e:
+            logger.error(f"Failed to log prediction to Supabase: {e}")
 
     return {
         "probability_of_default": pd_score,
