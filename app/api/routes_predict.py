@@ -43,6 +43,8 @@ class LoanApplication(BaseModel):
     collateralind: int = Field(..., description="Is collateral provided (1/0)", examples=[1])
 
 
+import shap
+
 class RiskAssessmentResponse(BaseModel):
     probability_of_default: float
     loss_given_default: float
@@ -50,6 +52,9 @@ class RiskAssessmentResponse(BaseModel):
     expected_loss: float
     risk_tier: str
     underwriting_action: str
+    shap_base_value: float
+    shap_values: dict[str, float]
+    processed_features: dict[str, float]
 
 def assign_risk_tier(pd_score: float):
     if pd_score < 0.10:
@@ -71,6 +76,20 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
     input_df = pd.DataFrame([data_dict])
 
     pd_score = float(MODEL.predict_proba(input_df)[:,1][0])
+
+    # Calculate SHAP values on the fly
+    preprocessor = MODEL.named_steps['preprocessor']
+    classifier = MODEL.named_steps['classifier']
+    
+    input_processed = preprocessor.transform(input_df)
+    feature_names = list(preprocessor.get_feature_names_out())
+    
+    explainer = shap.TreeExplainer(classifier)
+    shap_vals = explainer(input_processed)
+    
+    shap_base_value = float(shap_vals.base_values[0])
+    shap_contributions = dict(zip(feature_names, [float(v) for v in shap_vals.values[0]]))
+    processed_features_dict = dict(zip(feature_names, [float(v) for v in input_processed[0]]))
 
     lgd = data_dict['unguaranteed_exposure'] / data_dict['grossapproval']
     ead = data_dict['grossapproval']
@@ -100,5 +119,8 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
         "exposure_at_default": ead,
         "expected_loss": expected_loss,
         "risk_tier": tier_label,
-        "underwriting_action": action
+        "underwriting_action": action,
+        "shap_base_value": shap_base_value,
+        "shap_values": shap_contributions,
+        "processed_features": processed_features_dict
     }
