@@ -226,7 +226,7 @@ if st.session_state["access_token"] is None:
                     res = requests.post(
                         f"{API_BASE_URL}/login",
                         data={"username": login_username, "password": login_password},
-                        timeout=5.0
+                        timeout=30.0
                     )
                     if res.status_code == 200:
                         st.session_state["access_token"] = res.json()["access_token"]
