@@ -210,32 +210,64 @@ def logout():
 # --- LOGIN PAGE ---
 if st.session_state["access_token"] is None:
     st.markdown("<h2 style='text-align:center; padding-top: 3rem;'>🏦 SBA Loan Risk Portal</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#94a3b8;'>Please sign in to access the Underwriting Engine</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#94a3b8;'>Sign in or create an account to access the Underwriting Engine</p>", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 1.2, 1])
+    col1, col2, col3 = st.columns([1, 1.3, 1])
     with col2:
         st.markdown("<div class='info-box'>", unsafe_allow_html=True)
-        login_username = st.text_input("Username")
-        login_password = st.text_input("Password", type="password")
-        login_button = st.button("Sign In", type="primary", use_container_width=True)
+        tab_login, tab_signup = st.tabs(["🔑 Sign In", "📝 Sign Up"])
+        
+        # --- LOGIN TAB ---
+        with tab_login:
+            login_username = st.text_input("Username", key="login_user")
+            login_password = st.text_input("Password", type="password", key="login_pass")
+            login_button = st.button("Sign In", type="primary", use_container_width=True)
+            
+            if login_button:
+                with st.spinner("Authenticating..."):
+                    try:
+                        res = requests.post(
+                            f"{API_BASE_URL}/login",
+                            data={"username": login_username, "password": login_password},
+                            timeout=30.0
+                        )
+                        if res.status_code == 200:
+                            st.session_state["access_token"] = res.json()["access_token"]
+                            st.success("Successfully logged in!")
+                            st.rerun()
+                        else:
+                            st.error("Incorrect username or password.")
+                    except Exception as e:
+                        st.error(f"Cannot connect to auth server: {e}")
+                        
+        # --- SIGNUP TAB ---
+        with tab_signup:
+            signup_username = st.text_input("Choose Username", key="signup_user")
+            signup_password = st.text_input("Choose Password", type="password", key="signup_pass")
+            confirm_password = st.text_input("Confirm Password", type="password", key="signup_pass_confirm")
+            signup_button = st.button("Create Account", type="primary", use_container_width=True)
+            
+            if signup_button:
+                if not signup_username or not signup_password:
+                    st.error("Fields cannot be empty.")
+                elif signup_password != confirm_password:
+                    st.error("Passwords do not match.")
+                else:
+                    with st.spinner("Registering account..."):
+                        try:
+                            res = requests.post(
+                                f"{API_BASE_URL}/signup",
+                                json={"username": signup_username, "password": signup_password},
+                                timeout=30.0
+                            )
+                            if res.status_code == 201:
+                                st.success("Account created successfully! Please switch to the 'Sign In' tab to log in.")
+                            else:
+                                detail = res.json().get("detail", "Signup failed.")
+                                st.error(detail)
+                        except Exception as e:
+                            st.error(f"Cannot connect to auth server: {e}")
         st.markdown("</div>", unsafe_allow_html=True)
-
-        if login_button:
-            with st.spinner("Authenticating..."):
-                try:
-                    res = requests.post(
-                        f"{API_BASE_URL}/login",
-                        data={"username": login_username, "password": login_password},
-                        timeout=30.0
-                    )
-                    if res.status_code == 200:
-                        st.session_state["access_token"] = res.json()["access_token"]
-                        st.success("Successfully logged in!")
-                        st.rerun()
-                    else:
-                        st.error("Invalid username or password.")
-                except Exception as e:
-                    st.error(f"Cannot connect to auth server: {e}")
     st.stop()
 
 # --- MAIN DASHBOARD (Authenticated) ---
