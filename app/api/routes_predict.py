@@ -12,23 +12,23 @@ router = APIRouter(tags=["Predictions"])
 MODEL = joblib.load(settings.MODEL_PATH)
 
 class LoanApplication(BaseModel):
-    grossapproval: float = Field(..., description= "Gross approved loan amount", examples=250000.0)
-    sbaguaranteedapproval: float = Field(..., description="SBA guaranteed portion", example=187500.0)
-    terminmonths: int = Field(..., description="Loan term in months", example=120)
-    initialinterestrate: float = Field(..., description="Interest rate", example=7.5)
-    jobssupported: int = Field(..., description="Number of jobs supported", example=10)
-    bank_prior_def_rate: float = Field(..., description="Lender historical default rate", example=0.08)
-    bank_prior_loans: float = Field(..., description="Lender historical loan volume", example=500.0)
-    sector_historical_default_rate: float = Field(..., description="Industry sector historical default rate", example=0.087)
-    naics_sector: str = Field(..., description="2-digit NAICS industry code", example="72")
-    businesstype: str = Field(..., description="Business structure type", example="CORPORATION")
-    business_age_group: str = Field(..., description="Business age category", example="Existing")
-    bank_experience_tier: str = Field(..., description="Lender experience category", example="High")
-    revolverstatus: int = Field(..., description="Is revolving line of credit (1/0)", example=0)
-    is_same_state_bank: int = Field(..., description="Is lender in same state as borrower (1/0)", example=1)
-    is_variable_rate: int = Field(..., description="Is variable interest rate (1/0)", example=1)
-    is_franchise: int = Field(..., description="Is a franchise business (1/0)", example=0)
-    collateralind: int = Field(..., description="Is collateral provided (1/0)", example=1)
+    grossapproval: float = Field(..., description="Gross approved loan amount", examples=[250000.0])
+    sbaguaranteedapproval: float = Field(..., description="SBA guaranteed portion", examples=[187500.0])
+    terminmonths: int = Field(..., description="Loan term in months", examples=[120])
+    initialinterestrate: float = Field(..., description="Interest rate", examples=[7.5])
+    jobssupported: int = Field(..., description="Number of jobs supported", examples=[10])
+    bank_prior_def_rate: float = Field(..., description="Lender historical default rate", examples=[0.08])
+    bank_prior_loans: float = Field(..., description="Lender historical loan volume", examples=[500.0])
+    sector_historical_default_rate: float = Field(..., description="Industry sector historical default rate", examples=[0.087])
+    naics_sector: str = Field(..., description="2-digit NAICS industry code", examples=["72"])
+    businesstype: str = Field(..., description="Business structure type", examples=["CORPORATION"])
+    business_age_group: str = Field(..., description="Business age category", examples=["Existing"])
+    bank_experience_tier: str = Field(..., description="Lender experience category", examples=["High"])
+    revolverstatus: int = Field(..., description="Is revolving line of credit (1/0)", examples=[0])
+    is_same_state_bank: int = Field(..., description="Is lender in same state as borrower (1/0)", examples=[1])
+    is_variable_rate: int = Field(..., description="Is variable interest rate (1/0)", examples=[1])
+    is_franchise: int = Field(..., description="Is a franchise business (1/0)", examples=[0])
+    collateralind: int = Field(..., description="Is collateral provided (1/0)", examples=[1])
 
 
 class RiskAssessmentResponse(BaseModel):
@@ -58,7 +58,7 @@ async def predict_risk(application: LoanApplication):
 
     input_df = pd.DataFrame([data_dict])
 
-    pd_score = float(Model.predict_proba(input_df)[:,1][0])
+    pd_score = float(MODEL.predict_proba(input_df)[:,1][0])
 
     lgd = data_dict['unguaranteed_exposure'] / data_dict['grossapproval']
 

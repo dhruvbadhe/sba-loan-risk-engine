@@ -10,7 +10,7 @@ class Token(BaseModel):
     token_type: str
 
 USER_DATABASE = {
-    "admin": "$2b$12$EixZaYVK1fsYi1W8dIdhYeGCSL4x6E9bW5QJ5n.UdBd4t/2026.07"
+    "admin": "$2b$12$MeyfKud/uLC0ArGMg./i1ONbd1wG1AdEjVw833dXKFumDvUvkxbXe"
 }
 
 @router.post("/login", response_model= Token)
