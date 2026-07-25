@@ -9,6 +9,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import requests
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import shap
 
@@ -229,7 +231,7 @@ if st.session_state["access_token"] is None:
                         res = requests.post(
                             f"{API_BASE_URL}/login",
                             data={"username": login_username, "password": login_password},
-                            timeout=30.0
+                            timeout=60.0
                         )
                         if res.status_code == 200:
                             st.session_state["access_token"] = res.json()["access_token"]
@@ -258,7 +260,7 @@ if st.session_state["access_token"] is None:
                             res = requests.post(
                                 f"{API_BASE_URL}/signup",
                                 json={"username": signup_username, "password": signup_password},
-                                timeout=30.0
+                                timeout=60.0
                             )
                             if res.status_code == 201:
                                 st.success("Account created successfully! Please switch to the 'Sign In' tab to log in.")
@@ -362,7 +364,7 @@ if assess_clicked:
         try:
             # Call live API with JWT Token in Header
             headers = {"Authorization": f"Bearer {st.session_state['access_token']}"}
-            res = requests.post(f"{API_BASE_URL}/predict", json=payload, headers=headers, timeout=10.0)
+            res = requests.post(f"{API_BASE_URL}/predict", json=payload, headers=headers, timeout=60.0)
             
             if res.status_code == 200:
                 result = res.json()
