@@ -470,11 +470,13 @@ if assess_clicked:
                                 st.markdown(f"- `{clean_name}` (+{val:.3f})")
                     with mit_col:
                         st.markdown("**🟢 Reducing Risk:**")
+                        mit_count = 0
                         for name, val in reversed(drivers_list):
                             if val < 0:
                                 clean_name = name.replace('num__', '').replace('cat__', '').replace('bin__', '')
                                 st.markdown(f"- `{clean_name}` ({val:.3f})")
-                                if len(mit_col.children) >= 5:
+                                mit_count += 1
+                                if mit_count >= 4:
                                     break
 
                 # --- Tab 3: What-If Analysis ---
