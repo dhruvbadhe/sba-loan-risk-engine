@@ -9,6 +9,9 @@ from supabase import create_client, Client
 from app.core.dependencies import verify_api_access
 
 logger = logging.getLogger("app")
+import json
+import hashlib
+from app.cache.redis_cache import cache
 
 router = APIRouter(tags=["Predictions"])
 
@@ -73,30 +76,79 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
     data_dict['unguaranteed_exposure'] = data_dict['grossapproval'] - data_dict['sbaguaranteedapproval']
     data_dict['log_gross_approval'] = float(np.log1p(data_dict['grossapproval']))
 
-    input_df = pd.DataFrame([data_dict])
+    # 1. Create a unique cache key based on inputs
+    try:
+        payload_json = json.dumps(data_dict, sort_keys=True)
+        cache_key = f"predict:{hashlib.md5(payload_json.encode('utf-8')).hexdigest()}"
+    except Exception as e:
+        logger.error(f"Failed to build cache key: {e}")
+        cache_key = None
 
-    pd_score = float(MODEL.predict_proba(input_df)[:,1][0])
+    # 2. Query Redis cache
+    cached_res = None
+    if cache_key:
+        try:
+            cached_val = cache.get(cache_key)
+            if cached_val:
+                logger.info("Serving prediction from Redis cache!")
+                cached_res = json.loads(cached_val)
+        except Exception as e:
+            logger.error(f"Failed to query Redis cache: {e}")
 
-    # Calculate SHAP values on the fly
-    preprocessor = MODEL.named_steps['preprocessor']
-    classifier = MODEL.named_steps['classifier']
-    
-    input_processed = preprocessor.transform(input_df)
-    feature_names = list(preprocessor.get_feature_names_out())
-    
-    explainer = shap.TreeExplainer(classifier)
-    shap_vals = explainer(input_processed)
-    
-    shap_base_value = float(shap_vals.base_values[0])
-    shap_contributions = dict(zip(feature_names, [float(v) for v in shap_vals.values[0]]))
-    processed_features_dict = dict(zip(feature_names, [float(v) for v in input_processed[0]]))
+    if cached_res:
+        pd_score = cached_res["probability_of_default"]
+        lgd = cached_res["loss_given_default"]
+        ead = cached_res["exposure_at_default"]
+        expected_loss = cached_res["expected_loss"]
+        tier_label = cached_res["risk_tier"]
+        action = cached_res["underwriting_action"]
+        shap_base_value = cached_res["shap_base_value"]
+        shap_contributions = cached_res["shap_values"]
+        processed_features_dict = cached_res["processed_features"]
+    else:
+        # Run ML model prediction
+        input_df = pd.DataFrame([data_dict])
+        pd_score = float(MODEL.predict_proba(input_df)[:,1][0])
 
-    lgd = data_dict['unguaranteed_exposure'] / data_dict['grossapproval']
-    ead = data_dict['grossapproval']
-    expected_loss = pd_score * lgd * ead
-    tier_label, action = assign_risk_tier(pd_score)
+        # Calculate SHAP values on the fly
+        preprocessor = MODEL.named_steps['preprocessor']
+        classifier = MODEL.named_steps['classifier']
+        
+        input_processed = preprocessor.transform(input_df)
+        feature_names = list(preprocessor.get_feature_names_out())
+        
+        explainer = shap.TreeExplainer(classifier)
+        shap_vals = explainer(input_processed)
+        
+        shap_base_value = float(shap_vals.base_values[0])
+        shap_contributions = dict(zip(feature_names, [float(v) for v in shap_vals.values[0]]))
+        processed_features_dict = dict(zip(feature_names, [float(v) for v in input_processed[0]]))
 
-    # Log to Supabase audit database if configured
+        lgd = data_dict['unguaranteed_exposure'] / data_dict['grossapproval']
+        ead = data_dict['grossapproval']
+        expected_loss = pd_score * lgd * ead
+        tier_label, action = assign_risk_tier(pd_score)
+
+        # Store calculations in Redis Cache (expires in 1 hour)
+        if cache_key:
+            try:
+                calc_payload = {
+                    "probability_of_default": pd_score,
+                    "loss_given_default": lgd,
+                    "exposure_at_default": ead,
+                    "expected_loss": expected_loss,
+                    "risk_tier": tier_label,
+                    "underwriting_action": action,
+                    "shap_base_value": shap_base_value,
+                    "shap_values": shap_contributions,
+                    "processed_features": processed_features_dict
+                }
+                cache.set(cache_key, json.dumps(calc_payload), expire_seconds=3600)
+                logger.info("Successfully cached calculation payload in Redis")
+            except Exception as e:
+                logger.error(f"Failed to save calculation payload to Redis: {e}")
+
+    # Log to Supabase audit database if configured (always runs for auditing)
     if supabase_client:
         try:
             username = auth_info.get("user", "API_KEY_USER")
