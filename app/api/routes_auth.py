@@ -17,7 +17,7 @@ class UserCreate(BaseModel):
     username: str = Field(..., example="dhruv")
     password: str = Field(..., example="mypassword123")
 
-# Initialize Supabase client
+
 supabase_client: Client = None
 if settings.SUPABASE_URL and settings.SUPABASE_KEY:
     try:
@@ -27,16 +27,15 @@ if settings.SUPABASE_URL and settings.SUPABASE_KEY:
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def signup(user: UserCreate):
-    """
-    Registers a new user in the Supabase database.
-    """
+
+
     if not supabase_client:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database connection is not configured."
         )
 
-    # 1. Check if username already exists
+
     try:
         existing = supabase_client.table("users").select("username").eq("username", user.username).execute()
         if existing.data:
@@ -53,7 +52,7 @@ async def signup(user: UserCreate):
             detail="Database error."
         )
 
-    # 2. Hash password and insert user record
+
     hashed = get_password_hash(user.password)
     try:
         supabase_client.table("users").insert({
@@ -70,11 +69,10 @@ async def signup(user: UserCreate):
 
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """
-    Validates user credentials against Supabase and issues a JWT token.
-    """
+
+
     if not supabase_client:
-        # Fallback to local admin user for testing if Supabase is offline
+
         if form_data.username == "admin" and form_data.password == "admin":
             access_token = create_access_token(data={"sub": "admin"})
             return {"access_token": access_token, "token_type": "bearer"}
@@ -83,7 +81,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Database connection is not configured."
         )
 
-    # 1. Fetch user hash from Supabase
+
     try:
         res = supabase_client.table("users").select("password_hash").eq("username", form_data.username).execute()
         user_data = res.data
@@ -94,7 +92,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Database verification error."
         )
 
-    # 2. Verify username exists and password matches
+
     if not user_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -109,7 +107,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    # 3. Generate token
+
+
     access_token = create_access_token(data={"sub": form_data.username})
     return {"access_token": access_token, "token_type": "bearer"}

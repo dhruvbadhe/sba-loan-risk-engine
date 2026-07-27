@@ -1,9 +1,4 @@
-"""
-SBA Loan Risk Assessment Engine — Streamlit App (Decoupled API Frontend)
-================================================
-A production-grade credit risk assessment tool for SBA 7(a) loan officers.
-Communicates directly with the deployed FastAPI backend.
-"""
+
 
 import streamlit as st
 import pandas as pd
@@ -14,12 +9,10 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import shap
 
-# ============================================================
-# Page Config & Custom CSS
-# ============================================================
+
 st.set_page_config(
     page_title="SBA Loan Risk Engine",
-    page_icon="🏦",
+    page_icon="bank",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -134,37 +127,35 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
-# Constants
-# ============================================================
+
 API_BASE_URL = "https://sba-loan-risk-api.onrender.com"
 
-# Emojis mapped to sectors
+
 NAICS_SECTORS = {
-    '11': '🌾 Agriculture, Forestry, Fishing',
-    '21': '⛏️ Mining, Oil & Gas',
-    '22': '⚡ Utilities',
-    '23': '🏗️ Construction',
-    '31': '🏭 Manufacturing (Food, Textiles)',
-    '32': '🧪 Manufacturing (Wood, Chemical)',
-    '33': '🔧 Manufacturing (Metals, Electronics)',
-    '42': '📦 Wholesale Trade',
-    '44': '🛒 Retail Trade (Stores)',
-    '45': '🛍️ Retail Trade (Online, Other)',
-    '48': '🚚 Transportation & Warehousing',
-    '49': '📬 Postal & Courier Services',
-    '51': '💻 Information & Media',
-    '52': '🏛️ Finance & Insurance',
-    '53': '🏠 Real Estate',
-    '54': '📊 Professional & Technical Services',
-    '55': '🏢 Management of Companies',
-    '56': '🧹 Administrative & Waste Services',
-    '61': '🎓 Educational Services',
-    '62': '🏥 Health Care & Social Assistance',
-    '71': '🎭 Arts, Entertainment & Recreation',
-    '72': '🍽️ Accommodation & Food Services',
-    '81': '🔨 Other Services (Repair, Personal)',
-    '92': '🏛️ Public Administration',
+    '11': 'Agriculture, Forestry, Fishing',
+    '21': '️ Mining, Oil & Gas',
+    '22': 'Utilities',
+    '23': '️ Construction',
+    '31': 'Manufacturing (Food, Textiles)',
+    '32': 'Manufacturing (Wood, Chemical)',
+    '33': 'Manufacturing (Metals, Electronics)',
+    '42': 'Wholesale Trade',
+    '44': 'Retail Trade (Stores)',
+    '45': '️ Retail Trade (Online, Other)',
+    '48': 'Transportation & Warehousing',
+    '49': 'Postal & Courier Services',
+    '51': 'Information & Media',
+    '52': '️ Finance & Insurance',
+    '53': 'Real Estate',
+    '54': 'Professional & Technical Services',
+    '55': 'Management of Companies',
+    '56': 'Administrative & Waste Services',
+    '61': 'Educational Services',
+    '62': 'Health Care & Social Assistance',
+    '71': 'Arts, Entertainment & Recreation',
+    '72': '️ Accommodation & Food Services',
+    '81': 'Other Services (Repair, Personal)',
+    '92': '️ Public Administration',
 }
 
 SECTOR_DEFAULT_RATES = {
@@ -176,9 +167,7 @@ SECTOR_DEFAULT_RATES = {
     '71': 0.111, '72': 0.094, '81': 0.088, '92': 0.089,
 }
 
-# ============================================================
-# Helpers
-# ============================================================
+
 def render_metric(label, value, sub=""):
     st.markdown(f"""
     <div class="metric-card">
@@ -190,41 +179,39 @@ def render_metric(label, value, sub=""):
 
 def get_risk_tier(pd_score):
     if pd_score < 0.10:
-        return 1, '🟢 TIER 1 — AUTO APPROVE', 'tier-1', 'Low risk. Standard processing recommended.'
+        return 1, 'TIER 1 — AUTO APPROVE', 'tier-1', 'Low risk. Standard processing recommended.'
     elif pd_score < 0.25:
-        return 2, '🟡 TIER 2 — MANUAL REVIEW', 'tier-2', 'Moderate risk. Manual underwriting review recommended.'
+        return 2, 'TIER 2 — MANUAL REVIEW', 'tier-2', 'Moderate risk. Manual underwriting review recommended.'
     elif pd_score < 0.40:
-        return 3, '🟠 TIER 3 — SENIOR REVIEW', 'tier-3', 'Elevated risk. Senior credit officer review + additional collateral required.'
+        return 3, 'TIER 3 — SENIOR REVIEW', 'tier-3', 'Elevated risk. Senior credit officer review + additional collateral required.'
     else:
-        return 4, '🔴 TIER 4 — RECOMMEND DENIAL', 'tier-4', 'High risk. Recommend denial or significant restructuring of loan terms.'
+        return 4, 'TIER 4 — RECOMMEND DENIAL', 'tier-4', 'High risk. Recommend denial or significant restructuring of loan terms.'
 
-# ============================================================
-# Session State Authentication Check
-# ============================================================
+
 if "access_token" not in st.session_state:
     st.session_state["access_token"] = None
 
-# Logout Action
+
 def logout():
     st.session_state["access_token"] = None
     st.rerun()
 
-# --- LOGIN PAGE ---
+
 if st.session_state["access_token"] is None:
-    st.markdown("<h2 style='text-align:center; padding-top: 3rem;'>🏦 SBA Loan Risk Portal</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; padding-top: 3rem;'>SBA Loan Risk Portal</h2>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; color:#94a3b8;'>Sign in or create an account to access the Underwriting Engine</p>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 1.3, 1])
     with col2:
         st.markdown("<div class='info-box'>", unsafe_allow_html=True)
-        tab_login, tab_signup = st.tabs(["🔑 Sign In", "📝 Sign Up"])
-        
-        # --- LOGIN TAB ---
+        tab_login, tab_signup = st.tabs(["Sign In", "Sign Up"])
+
+
         with tab_login:
             login_username = st.text_input("Username", key="login_user")
             login_password = st.text_input("Password", type="password", key="login_pass")
             login_button = st.button("Sign In", type="primary", use_container_width=True)
-            
+
             if login_button:
                 with st.spinner("Authenticating..."):
                     try:
@@ -241,14 +228,14 @@ if st.session_state["access_token"] is None:
                             st.error("Incorrect username or password.")
                     except Exception as e:
                         st.error(f"Cannot connect to auth server: {e}")
-                        
-        # --- SIGNUP TAB ---
+
+
         with tab_signup:
             signup_username = st.text_input("Choose Username", key="signup_user")
             signup_password = st.text_input("Choose Password", type="password", key="signup_pass")
             confirm_password = st.text_input("Confirm Password", type="password", key="signup_pass_confirm")
             signup_button = st.button("Create Account", type="primary", use_container_width=True)
-            
+
             if signup_button:
                 if not signup_username or not signup_password:
                     st.error("Fields cannot be empty.")
@@ -272,36 +259,34 @@ if st.session_state["access_token"] is None:
         st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
-# --- MAIN DASHBOARD (Authenticated) ---
+
 st.markdown("""
 <div class="main-header">
-    <h1>🏦 SBA Loan Risk Assessment Engine</h1>
+    <h1>SBA Loan Risk Assessment Engine</h1>
     <p>Predict default probability • Calculate expected dollar loss • Explain risk drivers</p>
 </div>
 """, unsafe_allow_html=True)
 
-# Add logout hook via button
-if st.button("🔒 Log Out", type="secondary"):
+
+if st.button("Log Out", type="secondary"):
     logout()
 
-# ============================================================
-# Sidebar — Loan Application Inputs
-# ============================================================
+
 with st.sidebar:
-    st.markdown("## 📋 Loan Application")
+    st.markdown("## Loan Application")
     st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
 
-    # --- Loan Structure ---
-    st.markdown("### 💰 Loan Structure")
+
+    st.markdown("### Loan Structure")
     loan_amount = st.number_input("Loan Amount ($)", min_value=5_000, max_value=5_000_000, value=250_000, step=10_000, format="%d")
-    
+
     guarantee_pct = st.slider("SBA Guarantee (%)", min_value=50, max_value=90, value=75, step=5)
     sba_guarantee = int(loan_amount * guarantee_pct / 100)
     st.caption(f"SBA Guarantees: **${sba_guarantee:,}**")
-    
+
     term_years = st.selectbox("Loan Term", ["5 years (60 mo)", "7 years (84 mo)", "10 years (120 mo)", "15 years (180 mo)", "20 years (240 mo)", "25 years (300 mo)"], index=2)
     term_months = int(term_years.split("(")[1].split(" ")[0])
-    
+
     interest_rate = st.slider("Interest Rate (%)", min_value=2.0, max_value=14.0, value=7.5, step=0.25)
     is_variable = st.toggle("Variable Rate", value=True)
     is_revolving = st.toggle("Revolving Line of Credit", value=False)
@@ -309,8 +294,8 @@ with st.sidebar:
 
     st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
 
-    # --- Borrower Profile ---
-    st.markdown("### 👤 Borrower Profile")
+
+    st.markdown("### Borrower Profile")
     sector_label = st.selectbox("Industry Sector", list(NAICS_SECTORS.values()), index=17)
     naics_sector = [k for k, v in NAICS_SECTORS.items() if v == sector_label][0]
 
@@ -324,7 +309,7 @@ with st.sidebar:
 
     st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
 
-    # --- Bank Info ---
+
     st.markdown("### ### Lender Information")
     is_same_state = st.toggle("Bank in Same State as Borrower", value=True)
     bank_experience = st.selectbox("Bank SBA Experience", ["High (100+ loans)", "Medium (10–100 loans)", "Low (< 10 loans)"], index=0)
@@ -333,13 +318,11 @@ with st.sidebar:
     bank_def_rate = st.slider("Bank's Historical Default Rate (%)", min_value=0.0, max_value=25.0, value=8.0, step=0.5)
 
     st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
-    assess_clicked = st.button("🔍  ASSESS RISK", type="primary", use_container_width=True)
+    assess_clicked = st.button("ASSESS RISK", type="primary", use_container_width=True)
 
-# ============================================================
-# Main Processing Logic (API Interaction)
-# ============================================================
+
 if assess_clicked:
-    # Build payload matching FastAPI schema
+
     payload = {
         "grossapproval": float(loan_amount),
         "sbaguaranteedapproval": float(sba_guarantee),
@@ -362,10 +345,10 @@ if assess_clicked:
 
     with st.spinner("Analyzing risk parameters via FastAPI..."):
         try:
-            # Call live API with JWT Token in Header
+
             headers = {"Authorization": f"Bearer {st.session_state['access_token']}"}
             res = requests.post(f"{API_BASE_URL}/predict", json=payload, headers=headers, timeout=60.0)
-            
+
             if res.status_code == 200:
                 result = res.json()
                 pd_score = result["probability_of_default"]
@@ -374,20 +357,20 @@ if assess_clicked:
                 expected_loss = result["expected_loss"]
                 tier_label = result["risk_tier"]
                 action = result["underwriting_action"]
-                
-                # Fetch SHAP data from API
+
+
                 shap_base_value = result["shap_base_value"]
                 shap_contributions = result["shap_values"]
                 processed_features = result["processed_features"]
-                
-                # Dynamic risk properties mapping
+
+
                 _, _, tier_class, tier_advice = get_risk_tier(pd_score)
                 unguaranteed = loan_amount - sba_guarantee
 
-                # ---- Render Tabs ----
-                tab1, tab2, tab3 = st.tabs(["📊 Risk Assessment", "🔍 SHAP Explanation", "🔄 What-If Analysis"])
 
-                # --- Tab 1: Risk Metrics ---
+                tab1, tab2, tab3 = st.tabs(["Risk Assessment", "SHAP Explanation", "What-If Analysis"])
+
+
                 with tab1:
                     st.markdown(f'<div class="tier-card {tier_class}">{action} ({tier_label})</div>', unsafe_allow_html=True)
                     st.caption(f"*{tier_advice}*")
@@ -404,8 +387,8 @@ if assess_clicked:
                         render_metric("SBA Covers", f"${sba_guarantee:,.0f}", f"{guarantee_pct}% guaranteed")
 
                     st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
-                    
-                    st.markdown("#### 📐 Expected Loss Formula (Basel II/III)")
+
+                    st.markdown("#### Expected Loss Formula (Basel II/III)")
                     f1, f2, f3, f4, f5, f6, f7 = st.columns([2, 0.5, 2, 0.5, 2, 0.5, 2])
                     with f1:
                         render_metric("PD", f"{pd_score:.2%}", "Probability of Default")
@@ -422,17 +405,17 @@ if assess_clicked:
                     with f7:
                         render_metric("Expected Loss", f"${expected_loss:,.0f}", "Risk Cost per Loan")
 
-                # --- Tab 2: SHAP explanations (Reconstructed Locally) ---
+
                 with tab2:
                     st.markdown("#### Why did the model make this decision?")
                     st.markdown("The waterfall plot below is reconstructed directly from your Render API response metadata. "
                                  "Red bars increase default risk; blue bars decrease risk.")
 
-                    # Reconstruct a shap.Explanation object in memory from the API JSON data
+
                     sorted_features = sorted(shap_contributions.keys())
                     vals = np.array([shap_contributions[f] for f in sorted_features])
                     data = np.array([processed_features[f] for f in sorted_features])
-                    
+
                     explanation = shap.Explanation(
                         values=vals,
                         base_values=shap_base_value,
@@ -444,7 +427,7 @@ if assess_clicked:
                     fig_waterfall.patch.set_facecolor('#0E1117')
                     ax.set_facecolor('#0E1117')
                     shap.plots.waterfall(explanation, max_display=12, show=False)
-                    
+
                     plt.setp(ax.get_xticklabels(), color='#e2e8f0')
                     plt.setp(ax.get_yticklabels(), color='#e2e8f0')
                     ax.xaxis.label.set_color('#e2e8f0')
@@ -457,19 +440,19 @@ if assess_clicked:
                     plt.close()
 
                     st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
-                    st.markdown("#### 📌 Top Risk Drivers")
-                    
+                    st.markdown("#### Top Risk Drivers")
+
                     drivers_list = sorted(shap_contributions.items(), key=lambda x: x[1], reverse=True)
-                    
+
                     rd_col, mit_col = st.columns(2)
                     with rd_col:
-                        st.markdown("**🔴 Increasing Risk:**")
+                        st.markdown("**Increasing Risk:**")
                         for name, val in drivers_list[:4]:
                             if val > 0:
                                 clean_name = name.replace('num__', '').replace('cat__', '').replace('bin__', '')
                                 st.markdown(f"- `{clean_name}` (+{val:.3f})")
                     with mit_col:
-                        st.markdown("**🟢 Reducing Risk:**")
+                        st.markdown("**Reducing Risk:**")
                         mit_count = 0
                         for name, val in reversed(drivers_list):
                             if val < 0:
@@ -479,10 +462,10 @@ if assess_clicked:
                                 if mit_count >= 4:
                                     break
 
-                # --- Tab 3: What-If Analysis ---
+
                 with tab3:
                     st.markdown("#### Scenario Analysis: How does guarantee affect expected loss?")
-                    
+
                     scenarios = []
                     for pct in range(50, 95, 5):
                         new_sba = loan_amount * (pct / 100)
@@ -530,7 +513,7 @@ if assess_clicked:
             st.error(f"Failed to communicate with prediction API. Ensure backend is running. Error: {e}")
 
 else:
-    # --- Landing Hero metrics ---
+
     st.markdown("")
     hero1, hero2, hero3, hero4 = st.columns(4)
     with hero1:
@@ -546,10 +529,10 @@ else:
     st.markdown("### How It Works")
     hw1, hw2, hw3, hw4 = st.columns(4)
     with hw1:
-        st.markdown("<div class='info-box'><h4>📋 Step 1</h4><p style='color:#94a3b8;'>Enter loan application details in the sidebar.</p></div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-box'><h4>Step 1</h4><p style='color:#94a3b8;'>Enter loan application details in the sidebar.</p></div>", unsafe_allow_html=True)
     with hw2:
-        st.markdown("<div class='info-box'><h4>🤖 Step 2</h4><p style='color:#94a3b8;'>Our HistGradientBoosting model predicts the Default Probability (PD) via FastAPI.</p></div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-box'><h4>Step 2</h4><p style='color:#94a3b8;'>Our HistGradientBoosting model predicts the Default Probability (PD) via FastAPI.</p></div>", unsafe_allow_html=True)
     with hw3:
-        st.markdown("<div class='info-box'><h4>💰 Step 3</h4><p style='color:#94a3b8;'>Basel Expected Loss formula calculates dollar risk: EL = PD × LGD × EAD.</p></div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-box'><h4>Step 3</h4><p style='color:#94a3b8;'>Basel Expected Loss formula calculates dollar risk: EL = PD × LGD × EAD.</p></div>", unsafe_allow_html=True)
     with hw4:
-        st.markdown("<div class='info-box'><h4>🔍 Step 4</h4><p style='color:#94a3b8;'>SHAP returns explainability metrics dynamically from the backend.</p></div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-box'><h4>Step 4</h4><p style='color:#94a3b8;'>SHAP returns explainability metrics dynamically from the backend.</p></div>", unsafe_allow_html=True)

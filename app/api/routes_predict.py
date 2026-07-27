@@ -15,10 +15,10 @@ from app.cache.redis_cache import cache
 
 router = APIRouter(tags=["Predictions"])
 
-# Load the trained machine learning pipeline once when the API starts up
+
 MODEL = joblib.load(settings.MODEL_PATH)
 
-# Initialize Supabase client if keys are provided in .env
+
 supabase_client: Client = None
 if settings.SUPABASE_URL and settings.SUPABASE_KEY:
     try:
@@ -61,14 +61,14 @@ class RiskAssessmentResponse(BaseModel):
 
 def assign_risk_tier(pd_score: float):
     if pd_score < 0.10:
-        return "Tier 1", "🟢 Auto Approve"
+        return "Tier 1", "Auto Approve"
     elif pd_score < 0.25:
-        return "Tier 2", "🟡 Manual Review"
+        return "Tier 2", "Manual Review"
     elif pd_score < 0.40:
-        return "Tier 3", "🟠 Senior Review"
+        return "Tier 3", "Senior Review"
     else:
-        return "Tier 4", "🔴 Recommend Denial"
-    
+        return "Tier 4", "Recommend Denial"
+
 @router.post("/predict", response_model=RiskAssessmentResponse)
 async def predict_risk(application: LoanApplication, auth_info: dict = Depends(verify_api_access)):
     data_dict = application.model_dump()
@@ -76,7 +76,7 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
     data_dict['unguaranteed_exposure'] = data_dict['grossapproval'] - data_dict['sbaguaranteedapproval']
     data_dict['log_gross_approval'] = float(np.log1p(data_dict['grossapproval']))
 
-    # 1. Create a unique cache key based on inputs
+
     try:
         payload_json = json.dumps(data_dict, sort_keys=True)
         cache_key = f"predict:{hashlib.md5(payload_json.encode('utf-8')).hexdigest()}"
@@ -84,7 +84,7 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
         logger.error(f"Failed to build cache key: {e}")
         cache_key = None
 
-    # 2. Query Redis cache
+
     cached_res = None
     if cache_key:
         try:
@@ -106,20 +106,20 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
         shap_contributions = cached_res["shap_values"]
         processed_features_dict = cached_res["processed_features"]
     else:
-        # Run ML model prediction
+
         input_df = pd.DataFrame([data_dict])
         pd_score = float(MODEL.predict_proba(input_df)[:,1][0])
 
-        # Calculate SHAP values on the fly
+
         preprocessor = MODEL.named_steps['preprocessor']
         classifier = MODEL.named_steps['classifier']
-        
+
         input_processed = preprocessor.transform(input_df)
         feature_names = list(preprocessor.get_feature_names_out())
-        
+
         explainer = shap.TreeExplainer(classifier)
         shap_vals = explainer(input_processed)
-        
+
         shap_base_value = float(shap_vals.base_values[0])
         shap_contributions = dict(zip(feature_names, [float(v) for v in shap_vals.values[0]]))
         processed_features_dict = dict(zip(feature_names, [float(v) for v in input_processed[0]]))
@@ -129,7 +129,7 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
         expected_loss = pd_score * lgd * ead
         tier_label, action = assign_risk_tier(pd_score)
 
-        # Store calculations in Redis Cache (expires in 1 hour)
+
         if cache_key:
             try:
                 calc_payload = {
@@ -148,7 +148,7 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
             except Exception as e:
                 logger.error(f"Failed to save calculation payload to Redis: {e}")
 
-    # Log to Supabase audit database if configured (always runs for auditing)
+
     if supabase_client:
         try:
             username = auth_info.get("user", "API_KEY_USER")

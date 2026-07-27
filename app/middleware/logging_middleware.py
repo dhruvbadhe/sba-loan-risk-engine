@@ -18,4 +18,3 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
         )
         return response
-    

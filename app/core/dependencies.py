@@ -13,12 +13,12 @@ async def verify_api_access(
 ):
     if api_key and api_key == settings.API_KEY:
         return {"auth_method" : "api_key"}
-    
+
     if token:
         payload = decode_access_token(token)
         if payload is not None:
             return {"auth_method" : "jwt", "user" : payload.get("sub")}
-        
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail= "Invalid, missing, or expired credentials (API Key or JWT Token)",
