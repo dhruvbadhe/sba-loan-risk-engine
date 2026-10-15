@@ -4,7 +4,9 @@ import pytest
 
 
 def test_unavailable_redis_warning_contains_exception(monkeypatch, caplog):
-    monkeypatch.setattr("redis.from_url", Mock(side_effect=ConnectionError("connection refused")))
+    monkeypatch.setattr(
+        "redis.from_url", Mock(side_effect=ConnectionError("connection refused"))
+    )
     from app.cache.redis_cache import RedisCache
 
     with caplog.at_level(logging.WARNING, logger="app"):

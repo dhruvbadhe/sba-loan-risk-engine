@@ -60,15 +60,17 @@ def test_predict_accepts_valid_credentials(api, loan_application, auth_method):
     api.redis.get.assert_called_once()
     api.redis.set.assert_called_once()
     api.database.table.assert_called_once_with("predictions")
-    api.database.table.return_value.insert.assert_called_once_with({
-        "username": expected_user,
-        "loan_amount": 250000.0,
-        "term_months": 120,
-        "interest_rate": 7.5,
-        "probability_of_default": 0.2,
-        "expected_loss": 12500.0,
-        "risk_tier": "Tier 2",
-    })
+    api.database.table.return_value.insert.assert_called_once_with(
+        {
+            "username": expected_user,
+            "loan_amount": 250000.0,
+            "term_months": 120,
+            "interest_rate": 7.5,
+            "probability_of_default": 0.2,
+            "expected_loss": 12500.0,
+            "risk_tier": "Tier 2",
+        }
+    )
     api.database.table.return_value.insert.return_value.execute.assert_called_once()
 
 

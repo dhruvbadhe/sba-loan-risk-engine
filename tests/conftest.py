@@ -58,9 +58,11 @@ def api(monkeypatch):
     model.named_steps = {"preprocessor": preprocessor, "classifier": Mock()}
     monkeypatch.setattr("joblib.load", Mock(return_value=model))
 
-    explainer = Mock(return_value=SimpleNamespace(
-        base_values=np.array([0.1]), values=np.array([[0.1]])
-    ))
+    explainer = Mock(
+        return_value=SimpleNamespace(
+            base_values=np.array([0.1]), values=np.array([[0.1]])
+        )
+    )
     monkeypatch.setattr("shap.TreeExplainer", Mock(return_value=explainer))
 
     from app.core.config import settings
@@ -84,8 +86,12 @@ def api(monkeypatch):
 
     with TestClient(app) as client:
         yield SimpleNamespace(
-            client=client, model=model, database=database, redis=redis_client,
-            real_model_loader=real_model_loader, real_explainer_factory=real_explainer_factory,
+            client=client,
+            model=model,
+            database=database,
+            redis=redis_client,
+            real_model_loader=real_model_loader,
+            real_explainer_factory=real_explainer_factory,
         )
 
 

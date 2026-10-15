@@ -52,14 +52,19 @@ print("Settings loaded")
 
 
 @pytest.mark.parametrize("name", ["API_KEY", "JWT_SECRET_KEY"])
-@pytest.mark.parametrize("invalid_value", [None, "default", "", "   "],
-                         ids=["missing", "default", "empty", "whitespace"])
+@pytest.mark.parametrize(
+    "invalid_value",
+    [None, "default", "", "   "],
+    ids=["missing", "default", "empty", "whitespace"],
+)
 def test_production_rejects_unsafe_secret(tmp_path, name, invalid_value):
     secrets = dict(TEST_SECRETS)
     if invalid_value is None:
         del secrets[name]
     else:
-        secrets[name] = DEFAULT_SECRETS[name] if invalid_value == "default" else invalid_value
+        secrets[name] = (
+            DEFAULT_SECRETS[name] if invalid_value == "default" else invalid_value
+        )
 
     result = load_startup_settings(tmp_path, "production", secrets)
 

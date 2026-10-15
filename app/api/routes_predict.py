@@ -27,24 +27,55 @@ if settings.SUPABASE_URL and settings.SUPABASE_KEY:
     except Exception as e:
         logger.error(f"Failed to initialize Supabase client: {e}")
 
+
 class LoanApplication(BaseModel):
-    grossapproval: float = Field(..., description="Gross approved loan amount", examples=[250000.0])
-    sbaguaranteedapproval: float = Field(..., description="SBA guaranteed portion", examples=[187500.0])
+    grossapproval: float = Field(
+        ..., description="Gross approved loan amount", examples=[250000.0]
+    )
+    sbaguaranteedapproval: float = Field(
+        ..., description="SBA guaranteed portion", examples=[187500.0]
+    )
     terminmonths: int = Field(..., description="Loan term in months", examples=[120])
     initialinterestrate: float = Field(..., description="Interest rate", examples=[7.5])
-    jobssupported: int = Field(..., description="Number of jobs supported", examples=[10])
-    bank_prior_def_rate: float = Field(..., description="Lender historical default rate", examples=[0.08])
-    bank_prior_loans: float = Field(..., description="Lender historical loan volume", examples=[500.0])
-    sector_historical_default_rate: float = Field(..., description="Industry sector historical default rate", examples=[0.087])
-    naics_sector: str = Field(..., description="2-digit NAICS industry code", examples=["72"])
-    businesstype: str = Field(..., description="Business structure type", examples=["CORPORATION"])
-    business_age_group: str = Field(..., description="Business age category", examples=["Existing"])
-    bank_experience_tier: str = Field(..., description="Lender experience category", examples=["High"])
-    revolverstatus: int = Field(..., description="Is revolving line of credit (1/0)", examples=[0])
-    is_same_state_bank: int = Field(..., description="Is lender in same state as borrower (1/0)", examples=[1])
-    is_variable_rate: int = Field(..., description="Is variable interest rate (1/0)", examples=[1])
-    is_franchise: int = Field(..., description="Is a franchise business (1/0)", examples=[0])
-    collateralind: int = Field(..., description="Is collateral provided (1/0)", examples=[1])
+    jobssupported: int = Field(
+        ..., description="Number of jobs supported", examples=[10]
+    )
+    bank_prior_def_rate: float = Field(
+        ..., description="Lender historical default rate", examples=[0.08]
+    )
+    bank_prior_loans: float = Field(
+        ..., description="Lender historical loan volume", examples=[500.0]
+    )
+    sector_historical_default_rate: float = Field(
+        ..., description="Industry sector historical default rate", examples=[0.087]
+    )
+    naics_sector: str = Field(
+        ..., description="2-digit NAICS industry code", examples=["72"]
+    )
+    businesstype: str = Field(
+        ..., description="Business structure type", examples=["CORPORATION"]
+    )
+    business_age_group: str = Field(
+        ..., description="Business age category", examples=["Existing"]
+    )
+    bank_experience_tier: str = Field(
+        ..., description="Lender experience category", examples=["High"]
+    )
+    revolverstatus: int = Field(
+        ..., description="Is revolving line of credit (1/0)", examples=[0]
+    )
+    is_same_state_bank: int = Field(
+        ..., description="Is lender in same state as borrower (1/0)", examples=[1]
+    )
+    is_variable_rate: int = Field(
+        ..., description="Is variable interest rate (1/0)", examples=[1]
+    )
+    is_franchise: int = Field(
+        ..., description="Is a franchise business (1/0)", examples=[0]
+    )
+    collateralind: int = Field(
+        ..., description="Is collateral provided (1/0)", examples=[1]
+    )
 
 
 import shap
@@ -57,7 +88,7 @@ def get_explainer():
     global _explainer
     with _explainer_lock:
         if _explainer is None:
-            _explainer = shap.TreeExplainer(MODEL.named_steps['classifier'])
+            _explainer = shap.TreeExplainer(MODEL.named_steps["classifier"])
         return _explainer
 
 
@@ -72,6 +103,7 @@ class RiskAssessmentResponse(BaseModel):
     shap_values: dict[str, float]
     processed_features: dict[str, float]
 
+
 def assign_risk_tier(pd_score: float):
     if pd_score < 0.10:
         return "Tier 1", "Auto Approve"
@@ -82,13 +114,17 @@ def assign_risk_tier(pd_score: float):
     else:
         return "Tier 4", "Recommend Denial"
 
+
 @router.post("/predict", response_model=RiskAssessmentResponse)
-async def predict_risk(application: LoanApplication, auth_info: dict = Depends(verify_api_access)):
+async def predict_risk(
+    application: LoanApplication, auth_info: dict = Depends(verify_api_access)
+):
     data_dict = application.model_dump()
 
-    data_dict['unguaranteed_exposure'] = data_dict['grossapproval'] - data_dict['sbaguaranteedapproval']
-    data_dict['log_gross_approval'] = float(np.log1p(data_dict['grossapproval']))
-
+    data_dict["unguaranteed_exposure"] = (
+        data_dict["grossapproval"] - data_dict["sbaguaranteedapproval"]
+    )
+    data_dict["log_gross_approval"] = float(np.log1p(data_dict["grossapproval"]))
 
     try:
         payload_json = json.dumps(data_dict, sort_keys=True)
@@ -96,7 +132,6 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
     except Exception as e:
         logger.error(f"Failed to build cache key: {e}")
         cache_key = None
-
 
     cached_res = None
     if cache_key:
@@ -119,12 +154,10 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
         shap_contributions = cached_res["shap_values"]
         processed_features_dict = cached_res["processed_features"]
     else:
-
         input_df = pd.DataFrame([data_dict])
-        pd_score = float(MODEL.predict_proba(input_df)[:,1][0])
+        pd_score = float(MODEL.predict_proba(input_df)[:, 1][0])
 
-
-        preprocessor = MODEL.named_steps['preprocessor']
+        preprocessor = MODEL.named_steps["preprocessor"]
 
         input_processed = preprocessor.transform(input_df)
         feature_names = list(preprocessor.get_feature_names_out())
@@ -133,14 +166,17 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
         shap_vals = explainer(input_processed)
 
         shap_base_value = float(shap_vals.base_values[0])
-        shap_contributions = dict(zip(feature_names, [float(v) for v in shap_vals.values[0]]))
-        processed_features_dict = dict(zip(feature_names, [float(v) for v in input_processed[0]]))
+        shap_contributions = dict(
+            zip(feature_names, [float(v) for v in shap_vals.values[0]])
+        )
+        processed_features_dict = dict(
+            zip(feature_names, [float(v) for v in input_processed[0]])
+        )
 
-        lgd = data_dict['unguaranteed_exposure'] / data_dict['grossapproval']
-        ead = data_dict['grossapproval']
+        lgd = data_dict["unguaranteed_exposure"] / data_dict["grossapproval"]
+        ead = data_dict["grossapproval"]
         expected_loss = pd_score * lgd * ead
         tier_label, action = assign_risk_tier(pd_score)
-
 
         if cache_key:
             try:
@@ -153,27 +189,30 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
                     "underwriting_action": action,
                     "shap_base_value": shap_base_value,
                     "shap_values": shap_contributions,
-                    "processed_features": processed_features_dict
+                    "processed_features": processed_features_dict,
                 }
                 cache.set(cache_key, json.dumps(calc_payload), expire_seconds=3600)
                 logger.info("Successfully cached calculation payload in Redis")
             except Exception as e:
                 logger.error(f"Failed to save calculation payload to Redis: {e}")
 
-
     if supabase_client:
         try:
             username = auth_info.get("user", "API_KEY_USER")
-            supabase_client.table("predictions").insert({
-                "username": username,
-                "loan_amount": float(ead),
-                "term_months": int(data_dict['terminmonths']),
-                "interest_rate": float(data_dict['initialinterestrate']),
-                "probability_of_default": float(pd_score),
-                "expected_loss": float(expected_loss),
-                "risk_tier": tier_label
-            }).execute()
-            logger.info(f"Successfully logged prediction to Supabase for user: {username}")
+            supabase_client.table("predictions").insert(
+                {
+                    "username": username,
+                    "loan_amount": float(ead),
+                    "term_months": int(data_dict["terminmonths"]),
+                    "interest_rate": float(data_dict["initialinterestrate"]),
+                    "probability_of_default": float(pd_score),
+                    "expected_loss": float(expected_loss),
+                    "risk_tier": tier_label,
+                }
+            ).execute()
+            logger.info(
+                f"Successfully logged prediction to Supabase for user: {username}"
+            )
         except Exception as e:
             logger.error(f"Failed to log prediction to Supabase: {e}")
 
@@ -186,5 +225,5 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
         "underwriting_action": action,
         "shap_base_value": shap_base_value,
         "shap_values": shap_contributions,
-        "processed_features": processed_features_dict
+        "processed_features": processed_features_dict,
     }
