@@ -1,7 +1,9 @@
 # SBA Loan Risk Engine — Complete Project Guide
 
-**Project:** `dhruvbadhe/sba-loan-risk-engine`  
-**Guide prepared:** 15 October 2026  
+**Project:** `dhruvbadhe/sba-loan-risk-engine`
+
+**Guide prepared:** 15 October 2026
+
 **Verified implementation:** merge commit `6eaeb60b31dceb4a5a29e181a099bc33f85c80b7`
 
 This guide consolidates the project purpose, data and ML work, serving system,
