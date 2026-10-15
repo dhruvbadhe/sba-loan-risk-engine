@@ -39,6 +39,11 @@ def offline_environment(monkeypatch, tmp_path):
 
 @pytest.fixture
 def api(monkeypatch):
+    import joblib
+    import shap
+
+    real_model_loader = joblib.load
+    real_explainer_factory = shap.TreeExplainer
     database = Mock()
     redis_client = Mock()
     redis_client.get.return_value = None
@@ -79,7 +84,8 @@ def api(monkeypatch):
 
     with TestClient(app) as client:
         yield SimpleNamespace(
-            client=client, model=model, database=database, redis=redis_client
+            client=client, model=model, database=database, redis=redis_client,
+            real_model_loader=real_model_loader, real_explainer_factory=real_explainer_factory,
         )
 
 
