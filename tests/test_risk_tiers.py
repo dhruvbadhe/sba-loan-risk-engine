@@ -22,9 +22,19 @@ BOUNDARY_CASES = [
 @pytest.mark.parametrize(
     "pd_score,expected_tier",
     BOUNDARY_CASES,
-    ids=["zero", "below-10-percent", "at-10-percent", "above-10-percent",
-         "below-25-percent", "at-25-percent", "above-25-percent",
-         "below-40-percent", "at-40-percent", "above-40-percent", "one"],
+    ids=[
+        "zero",
+        "below-10-percent",
+        "at-10-percent",
+        "above-10-percent",
+        "below-25-percent",
+        "at-25-percent",
+        "above-25-percent",
+        "below-40-percent",
+        "at-40-percent",
+        "above-40-percent",
+        "one",
+    ],
 )
 def test_scalar_risk_tiers_at_each_boundary(pd_score, expected_tier):
     assert assign_risk_tier(pd_score) == expected_tier

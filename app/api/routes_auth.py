@@ -9,9 +9,11 @@ import logging
 logger = logging.getLogger("app")
 router = APIRouter(tags=["Authentication"])
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+
 
 class UserCreate(BaseModel):
     username: str = Field(..., examples=["dhruv"])
@@ -25,69 +27,73 @@ if settings.SUPABASE_URL and settings.SUPABASE_KEY:
     except Exception as e:
         logger.error(f"Failed to initialize Supabase client in auth: {e}")
 
+
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def signup(user: UserCreate):
-
 
     if not supabase_client:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database connection is not configured."
+            detail="Database connection is not configured.",
         )
 
-
     try:
-        existing = supabase_client.table("users").select("username").eq("username", user.username).execute()
+        existing = (
+            supabase_client.table("users")
+            .select("username")
+            .eq("username", user.username)
+            .execute()
+        )
         if existing.data:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already exists."
+                detail="Username already exists.",
             )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Supabase query error: {e}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error."
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error."
         )
-
 
     hashed = get_password_hash(user.password)
     try:
-        supabase_client.table("users").insert({
-            "username": user.username,
-            "password_hash": hashed
-        }).execute()
+        supabase_client.table("users").insert(
+            {"username": user.username, "password_hash": hashed}
+        ).execute()
         return {"message": "User registered successfully."}
     except Exception as e:
         logger.error(f"Supabase insert error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create user."
+            detail="Failed to create user.",
         )
+
 
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
-
     if not supabase_client:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database connection is not configured."
+            detail="Database connection is not configured.",
         )
 
-
     try:
-        res = supabase_client.table("users").select("password_hash").eq("username", form_data.username).execute()
+        res = (
+            supabase_client.table("users")
+            .select("password_hash")
+            .eq("username", form_data.username)
+            .execute()
+        )
         user_data = res.data
     except Exception as e:
         logger.error(f"Supabase auth query error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database verification error."
+            detail="Database verification error.",
         )
-
 
     if not user_data:
         raise HTTPException(
@@ -103,7 +109,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
 
     access_token = create_access_token(data={"sub": form_data.username})
     return {"access_token": access_token, "token_type": "bearer"}

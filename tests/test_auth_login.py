@@ -25,7 +25,9 @@ def client(monkeypatch, tmp_path):
 
     monkeypatch.setattr(settings, "SUPABASE_URL", "")
     monkeypatch.setattr(settings, "SUPABASE_KEY", "")
-    monkeypatch.setattr(settings, "JWT_SECRET_KEY", "test-only-jwt-secret-for-login-tests")
+    monkeypatch.setattr(
+        settings, "JWT_SECRET_KEY", "test-only-jwt-secret-for-login-tests"
+    )
 
     from app.api import routes_auth
 

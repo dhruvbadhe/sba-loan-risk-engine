@@ -25,7 +25,9 @@ def test_signup_hashes_password_before_insert(api):
 
 
 def test_duplicate_signup_does_not_insert(api):
-    api.database.table.return_value.select.return_value.eq.return_value.execute.return_value.data = [{"username": "test-user"}]
+    api.database.table.return_value.select.return_value.eq.return_value.execute.return_value.data = [
+        {"username": "test-user"}
+    ]
     response = api.client.post("/signup", json=CREDENTIALS)
     assert response.status_code == 400
     assert response.json()["detail"] == "Username already exists."
@@ -33,7 +35,9 @@ def test_duplicate_signup_does_not_insert(api):
 
 
 def test_signup_query_failure_is_generic_and_does_not_insert(api, caplog):
-    api.database.table.return_value.select.return_value.eq.return_value.execute.side_effect = RuntimeError("query unavailable")
+    api.database.table.return_value.select.return_value.eq.return_value.execute.side_effect = RuntimeError(
+        "query unavailable"
+    )
     with caplog.at_level(logging.ERROR, logger="app"):
         response = api.client.post("/signup", json=CREDENTIALS)
     assert response.status_code == 500
@@ -44,7 +48,9 @@ def test_signup_query_failure_is_generic_and_does_not_insert(api, caplog):
 
 def test_signup_insert_failure_is_generic(api, caplog):
     api.database.table.return_value.select.return_value.eq.return_value.execute.return_value.data = []
-    api.database.table.return_value.insert.return_value.execute.side_effect = RuntimeError("insert unavailable")
+    api.database.table.return_value.insert.return_value.execute.side_effect = (
+        RuntimeError("insert unavailable")
+    )
     with caplog.at_level(logging.ERROR, logger="app"):
         response = api.client.post("/signup", json=CREDENTIALS)
     assert response.status_code == 500
@@ -53,7 +59,9 @@ def test_signup_insert_failure_is_generic(api, caplog):
 
 
 def test_login_query_failure_is_generic(api):
-    api.database.table.return_value.select.return_value.eq.return_value.execute.side_effect = RuntimeError("private database detail")
+    api.database.table.return_value.select.return_value.eq.return_value.execute.side_effect = RuntimeError(
+        "private database detail"
+    )
     response = api.client.post("/login", data=CREDENTIALS)
     assert response.status_code == 500
     assert response.json()["detail"] == "Database verification error."
