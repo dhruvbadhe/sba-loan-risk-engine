@@ -25,6 +25,7 @@ COPY ./app /code/app
 
 ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
+ENV MODEL_PATH=/code/app/models/best_hgb_pipeline.pkl
 
 EXPOSE 8000
 
