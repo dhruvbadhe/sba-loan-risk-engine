@@ -277,8 +277,10 @@ coverage. Coverage is not a guarantee that every behavior is correct.
 
 Tests use an empty working directory for settings and forbid network access;
 Supabase, Redis, model loading, and SHAP are mocked for API requests. They run
-without `.env`. Local Python 3.9.6 produced 16 existing Pydantic/third-party
-warnings; Python 3.10 CI produced three. Generated `.coverage` and `coverage.xml`
+without `.env`. Pydantic deprecations are treated as test errors; the signup
+schema uses supported `examples` metadata. Local Python 3.9.6 still reports
+third-party Matplotlib/Pyparsing and urllib3/LibreSSL warnings, which are not
+suppressed by the test configuration. Generated `.coverage` and `coverage.xml`
 files are ignored; CI uploads the XML as `coverage-report`.
 
 ## CI and deployment

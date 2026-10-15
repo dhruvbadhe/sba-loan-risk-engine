@@ -14,8 +14,8 @@ class Token(BaseModel):
     token_type: str
 
 class UserCreate(BaseModel):
-    username: str = Field(..., example="dhruv")
-    password: str = Field(..., example="mypassword123")
+    username: str = Field(..., examples=["dhruv"])
+    password: str = Field(..., examples=["mypassword123"])
 
 
 supabase_client: Client = None
