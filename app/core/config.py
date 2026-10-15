@@ -1,5 +1,5 @@
 import os
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -23,6 +23,19 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str = Field(default="")
 
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", extra="ignore", hide_input_in_errors=True
+    )
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self):
+        if self.ENV == "production":
+            for name in ("API_KEY", "JWT_SECRET_KEY"):
+                value = getattr(self, name).strip()
+                if not value or value == type(self).model_fields[name].default:
+                    raise ValueError(
+                        f"{name} must be set to a non-default value in production"
+                    )
+        return self
 
 settings = Settings()

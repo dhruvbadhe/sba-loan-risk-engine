@@ -1,95 +1,301 @@
-# 🏦 SBA 7(a) Loan Credit Risk Assessment Engine & Decoupled Underwriting Portal
+# SBA Loan Risk Engine
 
-A production-grade, secure, and decoupled machine learning microservice application designed for SBA 7(a) commercial loan officers. The system predicts loan default probabilities, calculates Basel-compliant financial expected loss metrics, logs detailed prediction audit trails to a cloud database, and provides real-time explainability using SHAP.
+[![CI](https://github.com/dhruvbadhe/sba-loan-risk-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/dhruvbadhe/sba-loan-risk-engine/actions/workflows/ci.yml)
+![Tests: 46 passing, verified 2026-10-15](https://img.shields.io/badge/tests-46_passing-brightgreen)
+![Statement coverage: 32.44%, verified 2026-10-15](https://img.shields.io/badge/coverage-32.44%25-yellow)
 
----
+A FastAPI service that scores SBA loan applications with a bundled scikit-learn
+HistGradientBoosting model. It returns a default probability, expected-loss
+calculation, risk tier, underwriting action, and SHAP feature contributions.
+A separate Streamlit dashboard calls the API over HTTP.
 
-## 🔗 Live Deployments
-*   **Frontend Dashboard (Streamlit Cloud):** [Live App Link](https://sba-loan-risk-engine-aszwcpfzqmdffrrr4uhvvr.streamlit.app/)
-*   **Backend API Documentation (FastAPI on Render):** [Swagger Docs Link](https://sba-loan-risk-api.onrender.com/docs)
+The test and coverage badges are snapshots from 15 October 2026; CI is a live
+workflow badge. Upgrade work is tracked in [the plan](docs/UPGRADE_PLAN.md).
+The upgrade PRs are still awaiting review and merge; the hosted service may run
+an earlier revision.
 
----
+## Architecture
 
-## 🏗️ System Architecture
-The project is built using a decoupled **Microservice Architecture** that keeps the machine learning model isolated from the user interface:
-
-```
-               [ Streamlit Web Frontend ] 
-                           │
-           (1. Auth & Predict HTTP Requests)
-                           ▼
-              [ FastAPI Backend (Render) ]
-                 ├── (2. JWT Token Auth)
-                 ├── (3. HistGradientBoosting Pipeline)
-                 ├── (4. Redis Cache / Failover) ──► [ Redis Instance ]
-                 └── (5. Audit Trail Logs) ────────► [ Supabase PostgreSQL ]
-```
-
-1.  **Streamlit Frontend:** A lightweight, model-free user interface. It handles user authentication sessions, triggers predictions via API requests, and reconstructs explainability charts locally from returned JSON metadata.
-2.  **FastAPI Backend Service:** Served from a Docker container. It hosts the machine learning pipeline, manages JWT lifecycles, runs the SHAP explanation engine, and coordinates logging operations.
-3.  **Supabase PostgreSQL Database:** Stores encrypted user credentials (hashed with `bcrypt`) and logs prediction audit records.
-4.  **Redis Cache:** Caches prediction inputs to prevent redundant calculations and ensure sub-millisecond response latency. Runs with a try/except failover to prevent downtime if Redis goes offline.
-
----
-
-## ⚡ Key Features
-
-*   **Decoupled Machine Learning Serving:** The Streamlit app does not load the 1.1MB model pickle file. All inference and pre-processing are executed on the FastAPI server.
-*   **Basel Expected Loss Framework:** Translates raw default probabilities into financial metrics:
-    $$\text{Expected Loss (EL)} = \text{Probability of Default (PD)} \times \text{Loss Given Default (LGD)} \times \text{Exposure at Default (EAD)}$$
-*   **Dynamic Authentication Database:** A complete signup and login portal connected to a Supabase `users` table. Passwords are encrypted using cryptographically secure `bcrypt` hashes.
-*   **Prediction Audit Trails:** Automatically logs metadata (amount, term, interest rate, user, expected loss, and risk tiers) to a Supabase `predictions` table.
-*   **Explainable AI (SHAP):** Calculates feature contributions on the backend and transmits the base value and contributions in JSON. The frontend dynamically reconstructs the SHAP waterfall plot using Matplotlib.
-*   **What-If Scenario Simulation:** Simulates Expected Loss fluctuations against varying SBA Guarantee percentages (50% to 90%).
-
----
-
-## 🛠️ Tech Stack
-
-*   **Machine Learning:** Scikit-Learn, SHAP, Pandas, NumPy, Joblib, Matplotlib
-*   **Backend API:** FastAPI, Uvicorn, Pydantic v2, PyJWT, Passlib (Bcrypt)
-*   **Frontend Dashboard:** Streamlit, Requests
-*   **Databases & Infrastructure:** Supabase (PostgreSQL), Redis, Docker, Render Blueprints (Infrastructure-as-Code)
-
----
-
-## ⚙️ Environment Configuration (`.env`)
-To run the project locally, create a `.env` file at the root directory:
-
-```env
-ENV=development
-DEBUG=true
-API_KEY=your-local-dev-api-key
-JWT_SECRET_KEY=your-jwt-signing-secret-key
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-REDIS_URL=redis://localhost:6379/0
-
-# Cloud Database Logging (Supabase)
-SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_KEY=your-supabase-public-anon-key
+```mermaid
+flowchart TD
+    Client[HTTP client or Streamlit] --> API[FastAPI /predict]
+    API --> Auth[API key or JWT verification]
+    Auth --> Cache{Redis cache hit?}
+    Cache -- Yes --> Result[Prediction response data]
+    Cache -- No --> Model[Preprocessing + PD model]
+    Model --> SHAP[SHAP feature contributions]
+    SHAP --> Loss[Expected loss + risk tier]
+    Loss --> Store[Cache result for one hour]
+    Store --> Result
+    Result --> Audit[Attempt Supabase audit insert]
+    Audit --> Response[JSON response]
+    Login[Signup / login] --> Users[Supabase users + bcrypt]
+    Users --> Token[Signed JWT]
+    Token --> Client
 ```
 
----
+Authentication runs before inference. A valid `X-API-KEY` or bearer JWT grants
+access to `/predict`; missing, invalid, or expired credentials return 401.
+`/health`, `/docs`, and `/metrics` are public.
 
-## 🚀 How to Run Locally
+Redis caches prediction and explanation data, keyed by a hash of the sorted
+input including derived features. A cache hit still attempts an audit insert.
+Redis failure falls back to inference; Supabase audit failure is logged and does
+not fail the prediction. Without a configured Supabase client, login and signup
+return 503 and audit inserts are disabled.
 
-### 1. Run the Backend API
+## Quick start: API and Redis
+
+Install Docker with Compose and start its engine. Then:
+
 ```bash
-# Clone the repository
 git clone https://github.com/dhruvbadhe/sba-loan-risk-engine.git
 cd sba-loan-risk-engine
-
-# Activate virtual environment
-source venv/bin/activate
-
-# Start the FastAPI server
-uvicorn app.main:app --reload
+docker compose up --build
 ```
-The API documentation will be available locally at `http://127.0.0.1:8000/docs`.
 
-### 2. Run the Streamlit Dashboard
+Open [local API docs](http://localhost:8000/docs). In another terminal:
+
 ```bash
-streamlit run app/streamlit_app.py
+curl --fail http://localhost:8000/health
+# {"status":"healthy","version":"1.0.0"}
 ```
-The dashboard will open automatically at `http://localhost:8501`.
+
+No `.env` or cloud account is required for local API-key predictions. The API
+binds to `127.0.0.1:8000`; Redis has no host port. With no environment overrides,
+the local API key is the development placeholder `local-compose-api-key`.
+Compose reads an existing `.env` if present, so use your configured API key when
+you have overridden it. Stop the stack with `docker compose down`.
+See [Compose setup](docs/COMPOSE_SETUP.md) for details.
+
+## Python development
+
+Python 3.10 matches the container and CI runtime. Create a virtual environment
+from the repository root:
+
+```bash
+python3.10 -m venv venv
+source venv/bin/activate
+python -m pip install -r requirements-test.txt
+```
+
+To start the API without Docker, set your local configuration and run:
+
+```bash
+export ENV=development
+export API_KEY=your-local-api-key
+export JWT_SECRET_KEY=your-local-jwt-signing-key
+python -m uvicorn app.main:app --reload
+```
+
+Those strings are placeholders for local development. Redis is optional for this
+mode; the API continues without caching if `localhost:6379` is unavailable. The
+model must exist at `app/models/best_hgb_pipeline.pkl` or at `MODEL_PATH`.
+
+The optional dashboard can be started separately:
+
+```bash
+python -m streamlit run app/streamlit_app.py
+```
+
+It opens at [localhost:8501](http://localhost:8501). Its current `API_BASE_URL` is
+hardcoded to the hosted Render API, so starting it locally still uses that
+backend. It is not included in the Compose stack.
+
+## Environment variables
+
+The native API reads process environment variables and an optional root `.env`.
+Keep real credentials outside Git. Production must explicitly set
+`ENV=production`, `API_KEY`, and `JWT_SECRET_KEY`.
+
+| Variable | Purpose and default | Required? |
+| --- | --- | --- |
+| `ENV` | `development`; set exactly `production` to enable production secret validation | Production |
+| `API_KEY` | Shared key for `X-API-KEY`; native development default is `dev-key-change-in-production` | Private non-default value in production |
+| `JWT_SECRET_KEY` | JWT signing key; native development default is `super-secret-key-change-for-production` | Separate private non-default value in production |
+| `JWT_ALGORITHM` | JWT algorithm, `HS256` | No |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime, `60` | No |
+| `REDIS_URL` | Native default `redis://localhost:6379/0`; Compose uses `redis://redis:6379/0` | No |
+| `SUPABASE_URL` | Supabase project URL, empty by default | Login, signup, audit logging |
+| `SUPABASE_KEY` | Credential authorized for the required Supabase table operations, empty by default | Login, signup, audit logging |
+| `MODEL_PATH` | Bundled `app/models/best_hgb_pipeline.pkl` | Override only for another model path |
+| `APP_NAME` | API title, `SBA Loan Risk Assessment API` | No |
+| `DEBUG` | Settings field, defaults to `false`; currently does not configure FastAPI debug mode | No |
+
+Compose fixes `ENV=development` and `DEBUG=false`; it forwards API/JWT and Supabase
+values with local fallbacks. Other native settings are not forwarded unless added
+to the Compose configuration. Production validation rejects missing, default,
+empty, and whitespace-only API/JWT secrets before startup completes.
+
+Supabase must already have tables accessible to the supplied credential:
+`users` with `username` and `password_hash`, and `predictions` with `username`,
+`loan_amount`, `term_months`, `interest_rate`, `probability_of_default`,
+`expected_loss`, and `risk_tier`. Schema migrations are not included.
+
+## API examples
+
+### Predict with an API key
+
+With the default Compose development configuration:
+
+```bash
+curl --fail-with-body http://localhost:8000/predict \
+  -H 'Content-Type: application/json' \
+  -H 'X-API-KEY: local-compose-api-key' \
+  -d '{
+    "grossapproval": 250000,
+    "sbaguaranteedapproval": 187500,
+    "terminmonths": 120,
+    "initialinterestrate": 7.5,
+    "jobssupported": 10,
+    "bank_prior_def_rate": 0.08,
+    "bank_prior_loans": 500,
+    "sector_historical_default_rate": 0.087,
+    "naics_sector": "72",
+    "businesstype": "CORPORATION",
+    "business_age_group": "Existing",
+    "bank_experience_tier": "High",
+    "revolverstatus": 0,
+    "is_same_state_bank": 1,
+    "is_variable_rate": 1,
+    "is_franchise": 0,
+    "collateralind": 1
+  }'
+```
+
+The response contains `probability_of_default`, `loss_given_default`,
+`exposure_at_default`, `expected_loss`, `risk_tier`, `underwriting_action`,
+`shap_base_value`, `shap_values`, and `processed_features`. Prediction values
+come from the bundled model; the API-test doubles are not example model metrics.
+
+### Signup and JWT login
+
+With Supabase configured, register using JSON and log in using form data. Replace
+the sample credentials with your own local test account:
+
+```bash
+curl --fail-with-body http://localhost:8000/signup \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"example-user","password":"replace-with-your-test-password"}'
+
+curl --fail-with-body http://localhost:8000/login \
+  --data-urlencode 'username=example-user' \
+  --data-urlencode 'password=replace-with-your-test-password'
+```
+
+Login returns `access_token` and `token_type`. To use it for prediction, replace
+the `X-API-KEY` header in the prediction example with
+`Authorization: Bearer <access_token>`. Passwords are bcrypt hashes in Supabase;
+the service issues signed JWTs with an expiry. No fallback login account exists.
+
+| Endpoint | Authentication | Result |
+| --- | --- | --- |
+| `GET /health` | Public | Status and version |
+| `GET /docs` | Public | Interactive OpenAPI documentation |
+| `GET /metrics` | Public | Prometheus HTTP metrics |
+| `POST /signup` | Public; configured database required | 201 on successful registration |
+| `POST /login` | Form credentials; configured database required | JWT on successful login |
+| `POST /predict` | API key or JWT | Prediction, loss estimate, tier, explanation |
+
+For `/predict`, invalid credentials return 401 and invalid request structure or
+field types return 422. Amount/rate domain bounds are not yet enforced; use
+positive gross approval and sensible loan inputs. Do not submit a zero gross
+approval to the serving endpoint: its direct LGD division differs from the
+zero-safe, clipped helper in `src/expected_loss.py`.
+
+## Risk calculation and design decisions
+
+The serving calculation is `EL = PD × LGD × EAD`, with
+`LGD = (grossapproval − sbaguaranteedapproval) / grossapproval` and
+`EAD = grossapproval`. It treats the unguaranteed share as loss on default and
+assumes zero recovery on that share. This is a modeling assumption, not a claim
+of regulatory compliance.
+
+| PD interval | Risk tier | API action |
+| --- | --- | --- |
+| Below 10% | Tier 1 | Auto Approve |
+| 10% to below 25% | Tier 2 | Manual Review |
+| 25% to below 40% | Tier 3 | Senior Review |
+| 40% and above | Tier 4 | Recommend Denial |
+
+- **Separate UI and inference:** Streamlit sends HTTP requests; FastAPI owns model
+  loading, preprocessing, predictions, and explanation data.
+- **Optional external services:** Redis and audit logging are best effort. Auth
+  fails closed when credentials are invalid or the user database is unconfigured.
+- **Deterministic caching:** Repeated inputs share a one-hour cache entry. The
+  current key does not include a model version; clear the cache when changing the
+  model to avoid serving old results.
+- **Docker stages:** Dependencies are installed in a builder stage; the runtime
+  stage excludes the compiler toolchain.
+- **Offline tests:** External services and model/explainer behavior are mocked in
+  API tests. Unit tests exercise the actual loss and tier helpers. CI additionally
+  starts the real container with the bundled model.
+
+Current implementation limits include import-time model loading, a new SHAP
+explainer per uncached prediction, broad CORS settings, duplicate model artifacts,
+and the absence of measured latency numbers. These are tracked or deferred in the
+upgrade plan. The research pipeline in `src/pipeline.py` defines XGBoost and uses
+a different feature schema from the bundled HistGradientBoosting serving model;
+it is not the API's runtime inference path.
+
+## Tests and coverage
+
+```bash
+python -m ruff check --config ruff.toml app src tests
+python -m pytest -q --cov --cov-report=term-missing --cov-report=xml
+```
+
+Verified on 15 October 2026: **46 tests pass with 32.44% statement coverage** across
+all Python modules under `app/` and `src/`, including untested UI and training
+modules. Startup-test subprocesses are measured too. The authentication
+dependency, JWT helpers, and production settings each have 100% statement
+coverage. Coverage is not a guarantee that every behavior is correct.
+
+Tests use an empty working directory for settings and forbid network access;
+Supabase, Redis, model loading, and SHAP are mocked for API requests. They run
+without `.env`. Local Python 3.9.6 produced 16 existing Pydantic/third-party
+warnings; Python 3.10 CI produced three. Generated `.coverage` and `coverage.xml`
+files are ignored; CI uploads the XML as `coverage-report`.
+
+## CI and deployment
+
+[CI](.github/workflows/ci.yml) runs on every PR and push to `main`, using Python
+3.10. The `lint-test-build` job runs:
+
+1. Ruff lint.
+2. Pytest with coverage.
+3. Docker Compose image build.
+4. API and Redis startup, health checks, then container teardown.
+
+Failures stop later checks; teardown and report upload still run. Ruff uses
+`E4`, `E7`, `E9`, and `F`, with explicit exceptions for existing lint issues in
+four files. Actions and Ruff are pinned in the workflow/dependencies.
+
+GitHub branch protection requires an up-to-date PR and passing `lint-test-build`,
+including for administrators. Render is configured to automatically deploy `main`
+after CI checks pass. Manual deployments are separate triggers. The Blueprint
+declares the same gate; the owner's saved dashboard settings were confirmed.
+
+See the exact [branch-protection steps](docs/BRANCH_PROTECTION.md),
+[production environment checks](docs/RENDER_ENV_SETUP.md), and
+[Render deployment setup](docs/RENDER_CD_SETUP.md). The first production deploy
+of the upgrade stack must be checked after merge; passing PR CI alone does not
+prove that the hosted service runs those changes.
+
+## Repository map
+
+| Path | Responsibility |
+| --- | --- |
+| `app/api/` | Auth and prediction routes; Pydantic request/response models |
+| `app/core/` | Settings, JWT/password helpers, authentication dependency |
+| `app/cache/` | Redis client and fallback behavior |
+| `app/middleware/` | Request latency logging |
+| `app/models/` | Bundled serving model |
+| `app/streamlit_app.py` | Separate dashboard |
+| `src/` | Research cleaning, features, training, evaluation, loss and tier helpers |
+| `tests/` | Auth regressions, API requests, startup validation, loss/tier unit tests |
+| `compose.yaml` | Local API and Redis services |
+| `docs/UPGRADE_PLAN.md` | Upgrade scope, status, and done-checks |
+
+Hosted links: [Streamlit dashboard](https://sba-loan-risk-engine-aszwcpfzqmdffrrr4uhvvr.streamlit.app/)
+· [Render API docs](https://sba-loan-risk-api.onrender.com/docs).

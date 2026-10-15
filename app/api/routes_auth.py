@@ -72,10 +72,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
     if not supabase_client:
-
-        if form_data.username == "admin" and form_data.password == "admin":
-            access_token = create_access_token(data={"sub": "admin"})
-            return {"access_token": access_token, "token_type": "bearer"}
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database connection is not configured."
