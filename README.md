@@ -11,8 +11,10 @@ A separate Streamlit dashboard calls the API over HTTP.
 
 The test and coverage badges are snapshots from 16 October 2026; CI is a live
 workflow badge. Upgrade work is tracked in [the plan](docs/UPGRADE_PLAN.md).
-S1–S10 and S13 are merged. Hosted deployment status must be verified separately
-from test results.
+S1–S13 and continuation tasks P1–P9 are merged. See the
+[upgrade report](docs/UPGRADE_REPORT.md) for PRs, coverage scope, and remaining
+manual security steps. Hosted deployment status must be verified separately from
+test results.
 
 ## Architecture
 
