@@ -3,7 +3,11 @@ source =
     app
     src
 patch = subprocess
+omit =
+    app/streamlit_app.py
 
 [report]
+omit =
+    app/streamlit_app.py
 include_namespace_packages = True
 precision = 2

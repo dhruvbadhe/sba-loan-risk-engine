@@ -1,18 +1,18 @@
 # SBA Loan Risk Engine
 
 [![CI](https://github.com/dhruvbadhe/sba-loan-risk-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/dhruvbadhe/sba-loan-risk-engine/actions/workflows/ci.yml)
-![Tests: 46 passing, verified 2026-10-15](https://img.shields.io/badge/tests-46_passing-brightgreen)
-![Statement coverage: 32.44%, verified 2026-10-15](https://img.shields.io/badge/coverage-32.44%25-yellow)
+![Tests: 91 passing, verified 2026-10-16](https://img.shields.io/badge/tests-91_passing-brightgreen)
+![Statement coverage excluding Streamlit: 57.60%, verified 2026-10-16](https://img.shields.io/badge/coverage-57.60%25-yellow)
 
 A FastAPI service that scores SBA loan applications with a bundled scikit-learn
 HistGradientBoosting model. It returns a default probability, expected-loss
 calculation, risk tier, underwriting action, and SHAP feature contributions.
 A separate Streamlit dashboard calls the API over HTTP.
 
-The test and coverage badges are snapshots from 15 October 2026; CI is a live
+The test and coverage badges are snapshots from 16 October 2026; CI is a live
 workflow badge. Upgrade work is tracked in [the plan](docs/UPGRADE_PLAN.md).
-The upgrade PRs are still awaiting review and merge; the hosted service may run
-an earlier revision.
+S1–S10 and S13 are merged. Hosted deployment status must be verified separately
+from test results.
 
 ## Architecture
 
@@ -151,7 +151,9 @@ Add Environment Variable**, then save and deploy if a browser UI needs access.
 Supabase must already have tables accessible to the supplied credential:
 `users` with `username` and `password_hash`, and `predictions` with `username`,
 `loan_amount`, `term_months`, `interest_rate`, `probability_of_default`,
-`expected_loss`, and `risk_tier`. Schema migrations are not included.
+`expected_loss`, and `risk_tier`. Table creation is not included. Use a server-only
+backend secret key and follow [Supabase security steps](docs/SUPABASE_SECURITY.md)
+to enable RLS, revoke browser access, and rotate the old committed key.
 
 ## API examples
 
@@ -269,14 +271,24 @@ python -m ruff check --config ruff.toml app src tests
 python -m pytest -q --cov --cov-report=term-missing --cov-report=xml
 ```
 
-Verified on 15 October 2026: **46 tests pass with 32.44% statement coverage** across
-all Python modules under `app/` and `src/`, including untested UI and training
-modules. Startup-test subprocesses are measured too. The authentication
-dependency, JWT helpers, and production settings each have 100% statement
-coverage. Coverage is not a guarantee that every behavior is correct.
+Verified on 16 October 2026: **91 tests pass with 57.60% statement coverage**
+(360/625 statements) across `app/` and `src/`, **excluding `app/streamlit_app.py`**
+in coverage configuration. Backend `app/` coverage is **100.00%** (324/324).
+Streamlit has focused backend-URL/sign-in smoke tests; comprehensive interactive
+prediction, chart, and session testing is outside this backend coverage scope.
+Research/training modules remain included in the total and are largely untested.
+Startup-test subprocesses are measured too. Coverage measures statements, not all
+branches or correctness.
+
+Before P8's added tests, the same scope measured **48.16% overall** (301/625) and
+**81.79% backend app coverage** (265/324), with 59 tests. The 32 added tests include
+real bcrypt verification, cache/error paths, risk boundaries, concurrent SHAP
+initialization/retry, and an offline request with the bundled model and real SHAP
+explainer; external Supabase/Redis calls remain mocked.
 
 Tests use an empty working directory for settings and forbid network access;
-Supabase, Redis, model loading, and SHAP are mocked for API requests. They run
+Supabase and Redis are mocked. Most API tests also mock model/SHAP behavior; one
+integration test uses the real bundled model and explainer. They run
 without `.env`. Pydantic deprecations are treated as test errors; the signup
 schema uses supported `examples` metadata. Local Python 3.9.6 still reports
 third-party Matplotlib/Pyparsing and urllib3/LibreSSL warnings, which are not
