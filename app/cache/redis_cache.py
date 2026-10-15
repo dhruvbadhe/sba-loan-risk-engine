@@ -20,7 +20,7 @@ class RedisCache:
         except Exception as e:
             self.client = None
             self.is_connected = False
-            logger.warning("Redis is unavailable: {e}, Falling back yo no-cache mode.")
+            logger.warning(f"Redis is unavailable: {e}, Falling back to no-cache mode.")
 
     def get(self, key: str) -> Optional[str]:
         if not self.is_connected or not self.client:
