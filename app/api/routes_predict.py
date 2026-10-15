@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from app.core.config import settings
 import logging
+from threading import Lock
 from supabase import create_client, Client
 from app.core.dependencies import verify_api_access
 
@@ -47,6 +48,18 @@ class LoanApplication(BaseModel):
 
 
 import shap
+
+_explainer = None
+_explainer_lock = Lock()
+
+
+def get_explainer():
+    global _explainer
+    with _explainer_lock:
+        if _explainer is None:
+            _explainer = shap.TreeExplainer(MODEL.named_steps['classifier'])
+        return _explainer
+
 
 class RiskAssessmentResponse(BaseModel):
     probability_of_default: float
@@ -112,12 +125,11 @@ async def predict_risk(application: LoanApplication, auth_info: dict = Depends(v
 
 
         preprocessor = MODEL.named_steps['preprocessor']
-        classifier = MODEL.named_steps['classifier']
 
         input_processed = preprocessor.transform(input_df)
         feature_names = list(preprocessor.get_feature_names_out())
 
-        explainer = shap.TreeExplainer(classifier)
+        explainer = get_explainer()
         shap_vals = explainer(input_processed)
 
         shap_base_value = float(shap_vals.base_values[0])
