@@ -52,7 +52,7 @@ Each of these is also an interview story: **wrote a test → it failed → found
 | S6 ✅ | **Coverage** with `pytest-cov`; record the % | Coverage number in README | 10 min |
 | S7 ✅ | **GitHub Actions CI:** ruff lint → pytest with coverage → Docker build, on every PR and push to `main` | Green badge in README | 45 min |
 | S8 ✅ | **Branch protection** on `main` (CI must pass) + PR template | Settings on | 10 min |
-| S9 | **CD:** Render deploys only after CI passes on `main` (Render "auto-deploy on CI checks pass", or a deploy hook step in the workflow) | Broken PR can't reach prod | 20 min |
+| S9 ✅ | **CD:** Render deploys only after CI passes on `main` (Render "auto-deploy on CI checks pass", or a deploy hook step in the workflow) | Broken PR can't reach prod | 20 min |
 | S10 | **docker-compose:** API + Redis (+ Streamlit) with one command | `docker compose up` works on a clean clone | 45 min |
 | S11 | **pre-commit:** ruff, ruff-format, end-of-file fixers | Hooks run on commit | 20 min |
 | S12 | Cleanups: one model copy, fix Redis log line, restrict CORS origins, build SHAP explainer once at startup | Each in its own small PR | 45 min |
@@ -77,13 +77,13 @@ covered. Reproduce with `python -m pytest -q --cov --cov-report=term-missing
 same percentage. S4–S6 have passed their checks on the task branches; the PRs
 remain unmerged.
 
-**Block 3 verification (15 October 2026, pending Render confirmation):** Ruff
+**Block 3 verification (15 October 2026):** Ruff
 passes; the full suite passes with 46 tests, 16 existing warnings, and 32.44%
 statement coverage. GitHub Actions has passed lint, tests, and Docker build, and
 the README badge reports passing. Read-only GitHub API verification confirms
 `main` requires `lint-test-build`, an up-to-date PR branch, and administrator
-enforcement. S9's Blueprint configuration is prepared; the owner must confirm
-the saved Render branch and auto-deploy mode using [these steps](RENDER_CD_SETUP.md).
+enforcement. The owner confirmed the existing Render service uses branch `main`
+and **After CI Checks Pass**, following [these steps](RENDER_CD_SETUP.md).
 The upgrade PRs are still unmerged, so production deployment of the new code has
 not been verified.
 
