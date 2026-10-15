@@ -25,6 +25,9 @@ def load_startup_settings(tmp_path, environment, secrets):
         "ENV": environment,
         **secrets,
     }
+    # Preserve only coverage instrumentation when measuring these child processes.
+    if "COVERAGE_PROCESS_CONFIG" in os.environ:
+        env["COVERAGE_PROCESS_CONFIG"] = os.environ["COVERAGE_PROCESS_CONFIG"]
     script = """
 import socket
 

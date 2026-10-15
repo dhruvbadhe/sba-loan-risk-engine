@@ -44,9 +44,9 @@ Each of these is also an interview story: **wrote a test → it failed → found
 
 | # | Task | Done when | Time |
 |---|---|---|---|
-| S1 | Fix 0.1: raise 401 at the end of `verify_api_access` | Request with no credentials → 401 | 15 min |
-| S2 | Fix 0.2: delete the `admin`/`admin` branch; return 503 instead | No hardcoded credentials in repo | 10 min |
-| S3 | Fix 0.3: fail startup when `ENV=production` and secrets are default | App refuses to boot with default secrets in prod; Render env vars confirmed | 20 min |
+| S1 ✅ | Fix 0.1: raise 401 at the end of `verify_api_access` | Request with no credentials → 401 | 15 min |
+| S2 ✅ | Fix 0.2: delete the `admin`/`admin` branch; return 503 instead | No hardcoded credentials in repo | 10 min |
+| S3 | Fix 0.3: fail startup when `ENV=production` and secrets are default | App refuses to boot with default secrets in prod; Render env vars confirmed — local checks pass; awaiting [Render confirmation](RENDER_ENV_SETUP.md) | 20 min |
 | S4 | **API tests** (pytest + FastAPI `TestClient`): no creds → 401, bad JWT → 401, valid JWT → 200, valid API key → 200, invalid payload → 422, `/health` → 200. Mock Supabase and Redis. | All pass locally | 1 h |
 | S5 | **Unit tests** for `src/expected_loss.py` (LGD clipping, zero gross approval, EL = PD×LGD×EAD) and `src/risk_tiers.py` (each tier boundary) | All pass | 45 min |
 | S6 | **Coverage** with `pytest-cov`; record the % | Coverage number in README | 10 min |
@@ -57,6 +57,13 @@ Each of these is also an interview story: **wrote a test → it failed → found
 | S11 | **pre-commit:** ruff, ruff-format, end-of-file fixers | Hooks run on commit | 20 min |
 | S12 | Cleanups: one model copy, fix Redis log line, restrict CORS origins, build SHAP explainer once at startup | Each in its own small PR | 45 min |
 | S13 | README: architecture diagram (client → FastAPI → auth → cache → model → SHAP → audit log), setup, env vars table, API examples, test/CI badges, design decisions | README reads as an engineering doc | 1 h |
+
+**Block 1 local verification (15 October 2026):** 17 tests passed with two existing
+Pydantic deprecation warnings. Statement coverage is 10.20% across all Python code
+in `app/` and `src/` (including the untested UI and training modules); settings
+coverage is 100%. Measurement includes the startup-test child processes. S1 and S2
+have passed their checks on the task branches; the PRs remain unmerged. S3's local
+checks pass, but its done-check still requires Render environment confirmation.
 
 **Optional (after the deadline)**
 - **Latency numbers:** a small Locust or `httpx` load test; report p50/p95 with and without Redis. Strong for both SDE and ML-serving roles.
