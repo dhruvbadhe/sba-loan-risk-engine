@@ -21,6 +21,9 @@ in development mode and binds only to the local machine. The Compose API-key
 placeholder is `local-compose-api-key`; the JWT placeholder is also for local
 development only. Use the API docs' **Authorize** button to supply the API key.
 The image uses the existing model under `app/models/`.
+Docker and Compose set `MODEL_PATH=/code/app/models/best_hgb_pipeline.pkl`.
+The root `models` directory is only a symlink for legacy notebooks; there is
+one stored `.pkl` file and its content is unchanged.
 
 To enable signup, login, and prediction audit logging, supply your own
 `SUPABASE_URL` and `SUPABASE_KEY` through environment variables or a local,

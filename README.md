@@ -91,6 +91,10 @@ python -m uvicorn app.main:app --reload
 Those strings are placeholders for local development. Redis is optional for this
 mode; the API continues without caching if `localhost:6379` is unavailable. The
 model must exist at `app/models/best_hgb_pipeline.pkl` or at `MODEL_PATH`.
+This is the only stored model artifact. The root `models` directory is a symlink
+to `app/models` so historical notebook paths still work. Git checkouts must
+support symlinks to use those legacy paths. Docker and Compose explicitly use
+`/code/app/models/best_hgb_pipeline.pkl` and copy only the canonical artifact.
 
 The optional dashboard can be started separately:
 
