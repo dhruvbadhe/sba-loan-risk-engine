@@ -14,6 +14,7 @@ TEST_SETTINGS = {
     "JWT_SECRET_KEY": "test-only-jwt-secret-for-api-tests",
     "JWT_ALGORITHM": "HS256",
     "ACCESS_TOKEN_EXPIRE_MINUTES": "60",
+    "CORS_ORIGINS": "http://localhost:8501,http://127.0.0.1:8501,http://localhost:8000,http://127.0.0.1:8000",
     "SUPABASE_URL": "https://supabase.invalid",
     "SUPABASE_KEY": "test-only-supabase-key",
     "REDIS_URL": "redis://redis.invalid:6379/0",

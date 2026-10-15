@@ -1,5 +1,5 @@
 import os
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,6 +11,18 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = Field(default="super-secret-key-change-for-production")
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    CORS_ORIGINS: str = "http://localhost:8501,http://127.0.0.1:8501,http://localhost:8000,http://127.0.0.1:8000"
+
+    @field_validator("CORS_ORIGINS")
+    @classmethod
+    def reject_wildcard_origins(cls, value):
+        if "*" in value:
+            raise ValueError("CORS_ORIGINS must contain explicit origins, not wildcards")
+        return value
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
     MODEL_PATH: str = os.path.join(
         os.path.dirname(os.path.dirname(__file__)), "models", "best_hgb_pipeline.pkl"
