@@ -53,10 +53,10 @@ Each of these is also an interview story: **wrote a test → it failed → found
 | S7 ✅ | **GitHub Actions CI:** ruff lint → pytest with coverage → Docker build, on every PR and push to `main` | Green badge in README | 45 min |
 | S8 ✅ | **Branch protection** on `main` (CI must pass) + PR template | Settings on | 10 min |
 | S9 ✅ | **CD:** Render deploys only after CI passes on `main` (Render "auto-deploy on CI checks pass", or a deploy hook step in the workflow) | Broken PR can't reach prod | 20 min |
-| S10 | **docker-compose:** API + Redis (+ Streamlit) with one command | `docker compose up` works on a clean clone | 45 min |
+| S10 ✅ | **docker-compose:** API + Redis (+ Streamlit) with one command | `docker compose up` works on a clean clone | 45 min |
 | S11 | **pre-commit:** ruff, ruff-format, end-of-file fixers | Hooks run on commit | 20 min |
 | S12 | Cleanups: one model copy, fix Redis log line, restrict CORS origins, build SHAP explainer once at startup | Each in its own small PR | 45 min |
-| S13 | README: architecture diagram (client → FastAPI → auth → cache → model → SHAP → audit log), setup, env vars table, API examples, test/CI badges, design decisions | README reads as an engineering doc | 1 h |
+| S13 ✅ | README: architecture diagram (client → FastAPI → auth → cache → model → SHAP → audit log), setup, env vars table, API examples, test/CI badges, design decisions | README reads as an engineering doc | 1 h |
 
 **Block 1 local verification (15 October 2026):** 17 tests passed with two existing
 Pydantic deprecation warnings. Statement coverage is 10.20% across all Python code
@@ -86,6 +86,18 @@ enforcement. The owner confirmed the existing Render service uses branch `main`
 and **After CI Checks Pass**, following [these steps](RENDER_CD_SETUP.md).
 The upgrade PRs are still unmerged, so production deployment of the new code has
 not been verified.
+
+**Block 4 verification (15 October 2026):** Ruff passes; the full suite passes
+with 46 tests, 16 existing warnings, and 32.44% statement coverage. S10's clean
+GitHub runner built the image, started the API and Redis, waited for both to be
+healthy, and received a healthy `/health` response. The README's local links,
+shell syntax, and JSON example were checked; its prediction payload also returned
+HTTP 200 through the real API with the bundled model and SHAP, without network
+access or `.env`. The README explains configuration, architecture, auth, cache,
+audit behavior, deployment gates, and current limitations. All selected task
+checks pass on the upgrade branches; PR review/merge and the first production
+deployment of this code remain outstanding. S11, S12, and optional tasks remain
+deferred as requested.
 
 **Optional (after the deadline)**
 - **Latency numbers:** a small Locust or `httpx` load test; report p50/p95 with and without Redis. Strong for both SDE and ML-serving roles.
