@@ -40,7 +40,16 @@ jobs:
         run: python -m pytest -q --cov --cov-report=term-missing --cov-report=xml
 
       - name: Build Docker image
-        run: docker build --tag sba-loan-risk-engine:ci .
+        run: docker compose build
+
+      - name: Check API and Redis startup
+        run: |
+          docker compose up --wait --wait-timeout 180
+          curl --fail --show-error http://127.0.0.1:8000/health
+
+      - name: Stop Compose services
+        if: always()
+        run: docker compose down
 
       - name: Upload coverage report
         if: always()
