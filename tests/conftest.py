@@ -73,6 +73,7 @@ def api(monkeypatch):
     monkeypatch.setattr(routes_auth, "supabase_client", database)
     monkeypatch.setattr(routes_predict, "supabase_client", database)
     monkeypatch.setattr(routes_predict, "MODEL", model)
+    monkeypatch.setattr(routes_predict, "_explainer", None)
     monkeypatch.setattr(cache, "client", redis_client)
     monkeypatch.setattr(cache, "is_connected", True)
 

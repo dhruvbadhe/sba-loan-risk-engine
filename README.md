@@ -243,9 +243,12 @@ of regulatory compliance.
   API tests. Unit tests exercise the actual loss and tier helpers. CI additionally
   starts the real container with the bundled model.
 
-Current implementation limits include import-time model loading, a new SHAP
-explainer per uncached prediction, broad CORS settings, duplicate model artifacts,
-and the absence of measured latency numbers. These are tracked or deferred in the
+The SHAP explainer is built lazily once per API process and reused on uncached
+requests; a lock prevents duplicate initialization by concurrent callers.
+Each worker keeps its own model and explainer. The model is immutable for that
+process; restart workers and clear Redis when deploying a different model.
+Current implementation limits include import-time model loading and the absence
+of measured latency numbers. These are tracked or deferred in the
 upgrade plan. The research pipeline in `src/pipeline.py` defines XGBoost and uses
 a different feature schema from the bundled HistGradientBoosting serving model;
 it is not the API's runtime inference path.
