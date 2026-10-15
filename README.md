@@ -1,5 +1,7 @@
 # 🏦 SBA 7(a) Loan Credit Risk Assessment Engine & Decoupled Underwriting Portal
 
+[![CI](https://github.com/dhruvbadhe/sba-loan-risk-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/dhruvbadhe/sba-loan-risk-engine/actions/workflows/ci.yml)
+
 A production-grade, secure, and decoupled machine learning microservice application designed for SBA 7(a) commercial loan officers. The system predicts loan default probabilities, calculates Basel-compliant financial expected loss metrics, logs detailed prediction audit trails to a cloud database, and provides real-time explainability using SHAP.
 
 ---
@@ -118,3 +120,20 @@ deprecation warnings.
 
 The terminal report lists uncovered lines. `coverage.xml` provides the same
 measurement for CI tools; generated coverage files are ignored by Git.
+
+## Continuous integration
+
+GitHub Actions runs on every pull request and push to `main`, using Python 3.10
+to match the Docker image. The `lint-test-build` check runs Ruff, then pytest with
+coverage, then builds the Docker image. A failure stops subsequent checks. The
+coverage XML report is available as the `coverage-report` workflow artifact.
+
+Run the same lint check locally after installing `requirements-test.txt`:
+
+```bash
+python -m ruff check --config ruff.toml app src tests
+```
+
+Ruff uses the standard `E4`, `E7`, `E9`, and `F` rules. `ruff.toml` lists narrow
+exceptions for existing unused variables/imports and late imports in four files;
+these keep the CI addition within scope while cleanup tasks remain deferred.
