@@ -115,6 +115,7 @@ Keep real credentials outside Git. Production must explicitly set
 | `JWT_SECRET_KEY` | JWT signing key; native development default is `super-secret-key-change-for-production` | Separate private non-default value in production |
 | `JWT_ALGORITHM` | JWT algorithm, `HS256` | No |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime, `60` | No |
+| `CORS_ORIGINS` | Comma-separated browser origins; defaults to localhost and 127.0.0.1 on ports 8501 and 8000 | Set explicit HTTPS UI origins for production browser access; `*` is rejected |
 | `REDIS_URL` | Native default `redis://localhost:6379/0`; Compose uses `redis://redis:6379/0` | No |
 | `SUPABASE_URL` | Supabase project URL, empty by default | Login, signup, audit logging |
 | `SUPABASE_KEY` | Credential authorized for the required Supabase table operations, empty by default | Login, signup, audit logging |
@@ -126,6 +127,13 @@ Compose fixes `ENV=development` and `DEBUG=false`; it forwards API/JWT and Supab
 values with local fallbacks. Other native settings are not forwarded unless added
 to the Compose configuration. Production validation rejects missing, default,
 empty, and whitespace-only API/JWT secrets before startup completes.
+
+Set `CORS_ORIGINS` to exact origins, including scheme and port, without trailing
+slashes. For example: `https://dashboard.example.com,http://localhost:8501`.
+An empty value disables browser cross-origin access. CORS is a browser rule,
+not authentication; server-to-server Streamlit requests still need API credentials
+but do not need a CORS entry. In Render, set this under **Environment → Edit →
+Add Environment Variable**, then save and deploy if a browser UI needs access.
 
 Supabase must already have tables accessible to the supplied credential:
 `users` with `username` and `password_hash`, and `predictions` with `username`,
