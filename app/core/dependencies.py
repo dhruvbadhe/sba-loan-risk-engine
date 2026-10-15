@@ -19,8 +19,8 @@ async def verify_api_access(
         if payload is not None:
             return {"auth_method" : "jwt", "user" : payload.get("sub")}
 
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail= "Invalid, missing, or expired credentials (API Key or JWT Token)",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail= "Invalid, missing, or expired credentials (API Key or JWT Token)",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
