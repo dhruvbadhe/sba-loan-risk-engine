@@ -47,9 +47,9 @@ Each of these is also an interview story: **wrote a test → it failed → found
 | S1 ✅ | Fix 0.1: raise 401 at the end of `verify_api_access` | Request with no credentials → 401 | 15 min |
 | S2 ✅ | Fix 0.2: delete the `admin`/`admin` branch; return 503 instead | No hardcoded credentials in repo | 10 min |
 | S3 ✅ | Fix 0.3: fail startup when `ENV=production` and secrets are default | App refuses to boot with default secrets in prod; Render env vars confirmed | 20 min |
-| S4 | **API tests** (pytest + FastAPI `TestClient`): no creds → 401, bad JWT → 401, valid JWT → 200, valid API key → 200, invalid payload → 422, `/health` → 200. Mock Supabase and Redis. | All pass locally | 1 h |
-| S5 | **Unit tests** for `src/expected_loss.py` (LGD clipping, zero gross approval, EL = PD×LGD×EAD) and `src/risk_tiers.py` (each tier boundary) | All pass | 45 min |
-| S6 | **Coverage** with `pytest-cov`; record the % | Coverage number in README | 10 min |
+| S4 ✅ | **API tests** (pytest + FastAPI `TestClient`): no creds → 401, bad JWT → 401, valid JWT → 200, valid API key → 200, invalid payload → 422, `/health` → 200. Mock Supabase and Redis. | All pass locally | 1 h |
+| S5 ✅ | **Unit tests** for `src/expected_loss.py` (LGD clipping, zero gross approval, EL = PD×LGD×EAD) and `src/risk_tiers.py` (each tier boundary) | All pass | 45 min |
+| S6 ✅ | **Coverage** with `pytest-cov`; record the % | Coverage number in README | 10 min |
 | S7 | **GitHub Actions CI:** ruff lint → pytest with coverage → Docker build, on every PR and push to `main` | Green badge in README | 45 min |
 | S8 | **Branch protection** on `main` (CI must pass) + PR template | Settings on | 10 min |
 | S9 | **CD:** Render deploys only after CI passes on `main` (Render "auto-deploy on CI checks pass", or a deploy hook step in the workflow) | Broken PR can't reach prod | 20 min |
@@ -66,6 +66,16 @@ have passed their checks on the task branches; the PRs remain unmerged. The user
 confirmed Render's production values for `ENV`, `DEBUG`, `API_KEY`, and
 `JWT_SECRET_KEY` without sharing the secret values. The public `/health` endpoint
 returned `{"status":"healthy","version":"1.0.0"}`.
+
+**Block 2 local verification (15 October 2026):** 46 tests passed with 16 existing
+Pydantic and third-party deprecation warnings. Statement coverage is 32.44%
+(280 of 863 statements) across all `app/` and `src/` Python code, including
+untested UI and training modules and the startup-test child processes. The
+authentication dependency, JWT helpers, and production settings are each 100%
+covered. Reproduce with `python -m pytest -q --cov --cov-report=term-missing
+--cov-report=xml` after installing `requirements-test.txt`; the README records the
+same percentage. S4–S6 have passed their checks on the task branches; the PRs
+remain unmerged.
 
 **Optional (after the deadline)**
 - **Latency numbers:** a small Locust or `httpx` load test; report p50/p95 with and without Redis. Strong for both SDE and ML-serving roles.

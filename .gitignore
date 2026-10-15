@@ -13,6 +13,13 @@ dist/
 build/
 *.egg
 
+# Test and coverage output
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
 # Virtual Environment
 venv/
 env/

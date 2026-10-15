@@ -93,3 +93,28 @@ The API documentation will be available locally at `http://127.0.0.1:8000/docs`.
 streamlit run app/streamlit_app.py
 ```
 The dashboard will open automatically at `http://localhost:8501`.
+
+---
+
+## Tests and coverage
+
+With your virtual environment activated, install the test dependencies and run:
+
+```bash
+python -m pip install -r requirements-test.txt
+python -m pytest -q --cov --cov-report=term-missing --cov-report=xml
+```
+
+Tests run without a `.env` file or network access. Supabase, Redis, model loading,
+and SHAP are mocked for API tests; authentication and expected-loss calculations
+execute normally.
+
+As of 15 October 2026, **46 tests pass with 32.44% statement coverage** on Python
+3.9.6. Coverage includes all Python code in `app/` and `src/`, including untested
+Streamlit and training modules, and measures the startup-test child processes.
+The authentication dependency, JWT helpers, and production settings each have
+100% statement coverage. The run reports 16 existing Pydantic and third-party
+deprecation warnings.
+
+The terminal report lists uncovered lines. `coverage.xml` provides the same
+measurement for CI tools; generated coverage files are ignored by Git.

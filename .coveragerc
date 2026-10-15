@@ -1,0 +1,9 @@
+[run]
+source =
+    app
+    src
+patch = subprocess
+
+[report]
+include_namespace_packages = True
+precision = 2
