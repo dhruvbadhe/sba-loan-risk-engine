@@ -6,4 +6,5 @@ def test_supabase_key_is_supplied_outside_blueprint():
     lines = blueprint.splitlines()
     index = next(i for i, line in enumerate(lines) if line.strip() == "- key: SUPABASE_KEY")
     # Compare a boolean so pytest never displays the previous credential.
-    assert bool(lines[index + 1].strip() == "sync: false"), "Key must be supplied in Render"
+    dashboard_managed = lines[index + 1].strip() == "sync: false"
+    assert dashboard_managed, "Key must be supplied in Render"

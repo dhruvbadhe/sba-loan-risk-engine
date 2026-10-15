@@ -22,7 +22,7 @@ services:
       - key: SUPABASE_URL
         value: https://naaoarltrxjaikbqmjyd.supabase.co
       - key: SUPABASE_KEY
-        value: sb_publishable_R8QiIXZ86UpKi2GVuFc7Sg_TBQRYGbq
+        sync: false
 
   - type: redis
     name: cache-redis
