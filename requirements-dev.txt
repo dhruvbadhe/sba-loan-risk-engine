@@ -1,0 +1,4 @@
+-r requirements-test.txt
+pre-commit==4.3.0
+# virtualenv 21 requires Packaging 26, incompatible with Python 3.9's Streamlit.
+virtualenv==20.39.1

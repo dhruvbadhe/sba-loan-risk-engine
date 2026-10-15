@@ -24,11 +24,11 @@ During EDA, we discovered a classic case of **Systematic Missingness** (Missing 
 
 Our EDA surfaced several critical economic and behavioral insights that guided feature engineering:
 
-1. **The Moral Hazard Problem:** 
+1. **The Moral Hazard Problem:**
    Loans backed by an 85% government guarantee exhibited an actual default rate of **13.1%**, while those backed by a 75% guarantee defaulted at only **7.8%**. This stark contrast provides empirical evidence of moral hazard—when banks have less of their own capital at risk, underwriting standards demonstrably loosen.
-2. **Macroeconomic Sensitivity:** 
+2. **Macroeconomic Sensitivity:**
    The SBA portfolio proved highly sensitive to Federal Reserve monetary policy. Following the aggressive rate hikes starting in 2022, the overall default rate spiked from a historical average of ~8% up to **24% in 2023**, devastating variable-rate borrowers.
-3. **Industry Risk Profiling:** 
+3. **Industry Risk Profiling:**
    Retail (NAICS 44/45) and Transportation (NAICS 48) proved to be the riskiest sectors (~11.5% default rate), whereas Management of Companies (NAICS 55) was the safest (3.4%).
 
 ---
@@ -39,7 +39,7 @@ To capture institutional risk without causing data leakage, we implemented sophi
 
 ### Leak-Safe Historical Default Rates
 We needed to capture that some banks (and some industry sectors) are historically riskier than others. However, using the global average default rate of a bank would cause **target leakage**, as it includes future knowledge of whether the current loan defaults.
-* **Solution:** We calculated **cumulative, expanding-window default rates** grouped by Bank and Sector, shifted by one row. For any given loan, the model only sees the bank's default rate *up to the day before that loan was approved*. 
+* **Solution:** We calculated **cumulative, expanding-window default rates** grouped by Bank and Sector, shifted by one row. For any given loan, the model only sees the bank's default rate *up to the day before that loan was approved*.
 * This resulted in highly predictive, leak-safe features: `bank_prior_def_rate` and `sector_historical_default_rate`.
 
 ### LGD & EAD Features
@@ -95,7 +95,7 @@ We mapped the continuous PD scores into 4 actionable, monotonically ordered Risk
 
 ## Phase 7: Streamlit Deployment & UI Breakdown
 
-The entire pipeline was deployed into a production-grade, dark-themed Streamlit web application. 
+The entire pipeline was deployed into a production-grade, dark-themed Streamlit web application.
 
 ### 1. The Landing Page
 When no loan is currently being assessed, the app serves as a model dashboard. It displays:

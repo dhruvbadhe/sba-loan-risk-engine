@@ -1,0 +1,19 @@
+# Preserve research sources and notebooks excluded from this upgrade.
+exclude: '^(notebooks/|src/(clean|features|pipeline)\.py$)'
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.0
+    hooks:
+      - id: ruff-check
+        files: '^(app/|src/|tests/)'
+        args: [--config, ruff.toml]
+      - id: ruff-format
+        files: '^(app/|src/|tests/)'
+        args: [--config, ruff.toml]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files

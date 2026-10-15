@@ -79,6 +79,15 @@ source venv/bin/activate
 python -m pip install -r requirements-test.txt
 ```
 
+For development hooks, run `python -m pip install -r requirements-dev.txt`, then
+`pre-commit install` once per clone. Check everything with
+`pre-commit run --all-files`. Hooks run Ruff lint/format, end-of-file and trailing
+whitespace fixes, and added-file size checks. Ruff matches CI's pinned version;
+notebooks and `src/clean.py`, `src/features.py`, and `src/pipeline.py` are excluded
+from automatic hooks to preserve the protected research sources. The separate
+formatting PR prepared the other Python files. The existing model is unaffected;
+the size hook rejects newly added files above its default 500 KB limit.
+
 To start the API without Docker, set your local configuration and run:
 
 ```bash

@@ -408,18 +408,18 @@ sba-loan-risk-engine/
 # SBA Loan Charge-Off Prediction & Expected Loss Engine
 
 ## Business Problem
-Community banks that originate SBA-backed loans need to assess charge-off 
-risk at approval time. Even with the SBA guarantee covering 75-85%, the bank 
-still loses the unguaranteed portion — averaging $47K per charge-off in this 
-dataset. This model predicts default probability and calculates expected 
+Community banks that originate SBA-backed loans need to assess charge-off
+risk at approval time. Even with the SBA guarantee covering 75-85%, the bank
+still loses the unguaranteed portion — averaging $47K per charge-off in this
+dataset. This model predicts default probability and calculates expected
 dollar loss per loan.
 
 ## Key Results
 - **Model:** XGBoost, PR-AUC = 0.XX, ROC-AUC = 0.XX
-- **Business impact:** Flagging the top 15% riskiest loans catches 
-  ~60% of all charge-offs, potentially saving $XX million annually 
+- **Business impact:** Flagging the top 15% riskiest loans catches
+  ~60% of all charge-offs, potentially saving $XX million annually
   for a mid-size SBA lender
-- **Key insight:** Loans with >80% SBA guarantee show higher default 
+- **Key insight:** Loans with >80% SBA guarantee show higher default
   rates — evidence of moral hazard in government-backed lending
 
 ## Live Demo
