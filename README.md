@@ -102,9 +102,17 @@ The optional dashboard can be started separately:
 python -m streamlit run app/streamlit_app.py
 ```
 
-It opens at [localhost:8501](http://localhost:8501). Its current `API_BASE_URL` is
-hardcoded to the hosted Render API, so starting it locally still uses that
-backend. It is not included in the Compose stack.
+It opens at [localhost:8501](http://localhost:8501). Streamlit reads `API_BASE_URL`
+from its process environment, defaulting to `https://sba-loan-risk-api.onrender.com`.
+To use your local API, start it with:
+
+```bash
+API_BASE_URL=http://127.0.0.1:8000 python -m streamlit run app/streamlit_app.py
+```
+
+Use a base URL without a trailing slash. Streamlit is not included in Compose.
+This setting belongs to the Streamlit process, not the FastAPI settings or `.env`
+loader; export it before starting the UI.
 
 ## Environment variables
 
@@ -119,6 +127,7 @@ Keep real credentials outside Git. Production must explicitly set
 | `JWT_SECRET_KEY` | JWT signing key; native development default is `super-secret-key-change-for-production` | Separate private non-default value in production |
 | `JWT_ALGORITHM` | JWT algorithm, `HS256` | No |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime, `60` | No |
+| `API_BASE_URL` | Streamlit backend URL, defaults to `https://sba-loan-risk-api.onrender.com` | UI only; optional process environment variable |
 | `CORS_ORIGINS` | Comma-separated browser origins; defaults to localhost and 127.0.0.1 on ports 8501 and 8000 | Set explicit HTTPS UI origins for production browser access; `*` is rejected |
 | `REDIS_URL` | Native default `redis://localhost:6379/0`; Compose uses `redis://redis:6379/0` | No |
 | `SUPABASE_URL` | Supabase project URL, empty by default | Login, signup, audit logging |

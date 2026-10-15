@@ -1,5 +1,6 @@
 
 
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -128,7 +129,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-API_BASE_URL = "https://sba-loan-risk-api.onrender.com"
+API_BASE_URL = os.getenv("API_BASE_URL", "https://sba-loan-risk-api.onrender.com")
 
 
 NAICS_SECTORS = {
