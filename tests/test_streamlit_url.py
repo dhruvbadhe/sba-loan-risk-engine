@@ -6,13 +6,19 @@ from streamlit.testing.v1 import AppTest
 
 
 @pytest.mark.parametrize(
-    "configured,expected",
+    "configured,vercel_host,expected",
     [
-        ("http://127.0.0.1:8000", "http://127.0.0.1:8000/login"),
-        (None, "https://sba-loan-risk-api.onrender.com/login"),
+        ("http://127.0.0.1:8000", None, "http://127.0.0.1:8000/login"),
+        (None, None, "https://sba-loan-risk-api.onrender.com/login"),
+        (None, "example.vercel.app", "https://example.vercel.app/login"),
+        ("http://127.0.0.1:8000/", "example.vercel.app", "http://127.0.0.1:8000/login"),
     ],
 )
-def test_login_uses_configured_backend(monkeypatch, configured, expected):
+def test_login_uses_configured_backend(monkeypatch, configured, vercel_host, expected):
+    monkeypatch.delenv("VERCEL_URL", raising=False)
+    monkeypatch.delenv("VERCEL_PROJECT_PRODUCTION_URL", raising=False)
+    if vercel_host:
+        monkeypatch.setenv("VERCEL_PROJECT_PRODUCTION_URL", vercel_host)
     if configured is None:
         monkeypatch.delenv("API_BASE_URL", raising=False)
     else:

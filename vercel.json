@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "functions": {
+    "api/*.py": {
+      "maxDuration": 300,
+      "includeFiles": "{app/**,.streamlit/**}",
+      "excludeFiles": "{venv/**,.venv/**,data/**,notebooks/**,reports/**,tests/**,docs/**,src/**,.env,coverage.xml}"
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
+  ]
+}
