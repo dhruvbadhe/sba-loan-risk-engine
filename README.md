@@ -72,11 +72,11 @@ See [Compose setup](docs/COMPOSE_SETUP.md) for details.
 
 ## Python development
 
-Python 3.10 matches the container and CI runtime. Create a virtual environment
+Python 3.12 matches the container and CI runtime. Create a virtual environment
 from the repository root:
 
 ```bash
-python3.10 -m venv venv
+python3.12 -m venv venv
 source venv/bin/activate
 python -m pip install -r requirements-test.txt
 ```
@@ -309,7 +309,7 @@ files are ignored; CI uploads the XML as `coverage-report`.
 ## CI and deployment
 
 [CI](.github/workflows/ci.yml) runs on every PR and push to `main`, using Python
-3.10. The `lint-test-build` job runs:
+3.12. The `lint-test-build` job runs:
 
 1. Ruff lint.
 2. Pytest with coverage.
@@ -346,5 +346,13 @@ prove that the hosted service runs those changes.
 | `compose.yaml` | Local API and Redis services |
 | `docs/UPGRADE_PLAN.md` | Upgrade scope, status, and done-checks |
 
-Hosted links: [Streamlit dashboard](https://sba-loan-risk-engine-aszwcpfzqmdffrrr4uhvvr.streamlit.app/)
-· [Render API docs](https://sba-loan-risk-api.onrender.com/docs).
+Hosted links: [Vercel dashboard](https://sba-loan-risk-engine.vercel.app/)
+· [Vercel API docs](https://sba-loan-risk-engine.vercel.app/docs).
+The previous [Streamlit Community Cloud dashboard](https://sba-loan-risk-engine-aszwcpfzqmdffrrr4uhvvr.streamlit.app/)
+and [Render API](https://sba-loan-risk-api.onrender.com/docs) remain separate deployments.
+
+## Vercel hosting
+
+The Vercel launcher serves the existing Streamlit dashboard and FastAPI API from
+one ASGI application. See [deployment details](docs/VERCEL_DEPLOYMENT.md). Python
+3.12 and Streamlit 1.66.1 are used; the trained model and prediction logic are unchanged.

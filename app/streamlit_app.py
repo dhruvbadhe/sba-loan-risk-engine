@@ -8,6 +8,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import shap
+from app.chart_rendering import figure_image_html
 
 
 st.set_page_config(
@@ -131,7 +132,13 @@ st.markdown(
 )
 
 
-API_BASE_URL = os.getenv("API_BASE_URL", "https://sba-loan-risk-api.onrender.com")
+_vercel_host = os.getenv("VERCEL_PROJECT_PRODUCTION_URL") or os.getenv("VERCEL_URL")
+API_BASE_URL = os.getenv(
+    "API_BASE_URL",
+    f"https://{_vercel_host}"
+    if _vercel_host
+    else "https://sba-loan-risk-api.onrender.com",
+).rstrip("/")
 
 
 NAICS_SECTORS = {
@@ -557,7 +564,7 @@ if assess_clicked:
                 with tab2:
                     st.markdown("#### Why did the model make this decision?")
                     st.markdown(
-                        "The waterfall plot below is reconstructed directly from your Render API response metadata. "
+                        "The waterfall plot below is reconstructed directly from your API response metadata. "
                         "Red bars increase default risk; blue bars decrease risk."
                     )
 
@@ -585,7 +592,10 @@ if assess_clicked:
                         spine.set_edgecolor("#475569")
 
                     plt.tight_layout()
-                    st.pyplot(fig_waterfall)
+                    st.markdown(
+                        figure_image_html(fig_waterfall, "SHAP feature contributions"),
+                        unsafe_allow_html=True,
+                    )
                     plt.close()
 
                     st.markdown('<hr class="custom-divider">', unsafe_allow_html=True)
@@ -694,7 +704,12 @@ if assess_clicked:
                     ax.legend(facecolor="#1A1D29", labelcolor="#94a3b8")
                     ax.grid(axis="y", alpha=0.15, color="#475569")
                     plt.tight_layout()
-                    st.pyplot(fig_whatif)
+                    st.markdown(
+                        figure_image_html(
+                            fig_whatif, "Expected loss versus SBA guarantee percentage"
+                        ),
+                        unsafe_allow_html=True,
+                    )
                     plt.close()
 
             else:
